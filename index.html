@@ -1,0 +1,2949 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ICA for EEG — Interactive Concept Demo (Single File)</title>
+  <style>
+    :root{
+      --bg:#0b1020;
+      --panel:#111a33;
+      --panel2:#0f1730;
+      --text:#e7ecff;
+      --muted:#aab3da;
+      --accent:#7aa2ff;
+      --good:#35d07f;
+      --warn:#ffcc66;
+      --bad:#ff6b6b;
+      --border:rgba(255,255,255,.12);
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius:18px;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background: radial-gradient(1200px 800px at 20% 10%, rgba(122,162,255,.22), transparent 60%),
+                  radial-gradient(1000px 700px at 90% 40%, rgba(53,208,127,.14), transparent 55%),
+                  radial-gradient(900px 600px at 40% 90%, rgba(255,107,107,.10), transparent 60%),
+                  var(--bg);
+      color:var(--text);
+      font: 14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    header{
+      padding:18px 18px 10px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1{font-size:18px;margin:0 0 6px;letter-spacing:.2px}
+    .sub{color:var(--muted);max-width: 980px}
+
+    .wrap{
+      display:grid;
+      grid-template-columns: 360px 1fr;
+      gap:14px;
+      padding: 12px 18px 22px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+
+    .card h2{
+      font-size:13px;
+      text-transform:uppercase;
+      letter-spacing:.10em;
+      margin:0;
+      padding:12px 14px;
+      background: rgba(0,0,0,.18);
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .card .content{padding:14px}
+
+    .tabs{display:flex;gap:8px;padding:12px 14px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.12)}
+    .tabbtn{
+      appearance:none;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.05);
+      color: var(--text);
+      padding:8px 10px;
+      border-radius: 999px;
+      cursor:pointer;
+      font-weight:600;
+      letter-spacing:.2px;
+      transition: transform .05s ease, background .2s ease;
+    }
+    .tabbtn:hover{background: rgba(255,255,255,.08)}
+    .tabbtn:active{transform: translateY(1px)}
+    .tabbtn.active{background: rgba(122,162,255,.18); border-color: rgba(122,162,255,.55)}
+
+    .section{display:none}
+    .section.active{display:block}
+
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+
+    label{display:block;color:var(--muted);font-size:12px;margin: 10px 0 6px}
+    input[type=range], select{width:100%}
+    input[type=file]{width:100%;max-width:100%}
+    .grid2 > *{min-width:0}
+    select{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+    .btnbar{display:flex;gap:8px;flex-wrap:wrap;margin-top: 10px}
+
+    button{
+      appearance:none;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      padding:9px 10px;
+      border-radius: 12px;
+      cursor:pointer;
+      font-weight:650;
+      transition: transform .05s ease, background .2s ease;
+    }
+    button:hover{background: rgba(255,255,255,.10)}
+    button:active{transform: translateY(1px)}
+    button.primary{background: rgba(122,162,255,.18); border-color: rgba(122,162,255,.55)}
+    button.good{background: rgba(53,208,127,.14); border-color: rgba(53,208,127,.45)}
+    button.warn{background: rgba(255,204,102,.14); border-color: rgba(255,204,102,.45)}
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 10px;
+      border-radius: 999px;
+      border:1px solid var(--border);
+      background: rgba(0,0,0,.18);
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 10px;
+    }
+    .pill.good{background: rgba(53,208,127,.14); border-color: rgba(53,208,127,.45); color: var(--text)}
+    .pill.warn{background: rgba(255,204,102,.14); border-color: rgba(255,204,102,.45); color: var(--text)}
+    .pill.bad{background: rgba(255,107,107,.14); border-color: rgba(255,107,107,.45); color: var(--text)}
+
+    .grid2{display:grid;grid-template-columns:1fr 1fr; gap:10px}
+
+    .small{color:var(--muted);font-size:12px}
+
+    .plots{
+      padding:12px;
+    }
+
+    .plotgrid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:12px;
+      padding: 12px;
+    }
+
+    .plotcard{
+      background: rgba(0,0,0,.14);
+      border:1px solid var(--border);
+      border-radius: 16px;
+      overflow:hidden;
+    }
+    .plotcard .hd{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:10px 12px;
+      border-bottom:1px solid var(--border);
+      color: var(--muted);
+      font-size:12px;
+      letter-spacing:.06em;
+      text-transform:uppercase;
+      background: rgba(0,0,0,.14);
+    }
+
+    canvas{display:block;width:100%;height:190px}
+
+    .legend{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      padding:10px 12px;
+      border-top:1px solid var(--border);
+      background: rgba(0,0,0,.10);
+      color: var(--muted);
+      font-size:12px;
+    }
+
+    .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border:1px solid var(--border);border-radius:999px}
+    .dot{width:10px;height:10px;border-radius:999px;background:#fff;opacity:.85}
+
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
+
+    .matrix{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:10px;
+      overflow:hidden;
+      border-radius: 12px;
+      border:1px solid var(--border);
+    }
+    .matrix td, .matrix th{
+      padding:6px 8px;
+      border-bottom:1px solid var(--border);
+      border-right:1px solid var(--border);
+      text-align:right;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size:12px;
+    }
+    .matrix th{color:var(--muted);background: rgba(0,0,0,.12);text-align:center}
+    .matrix tr:last-child td{border-bottom:none}
+    .matrix td:last-child, .matrix th:last-child{border-right:none}
+
+    .compList{margin-top:10px;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+    .compRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:8px 10px;
+      border-bottom:1px solid var(--border);
+      background: rgba(0,0,0,.10);
+    }
+    .compRow:last-child{border-bottom:none}
+    .compRow .left{display:flex;align-items:center;gap:10px}
+    .compRow input{transform: scale(1.1)}
+
+    .hint{
+      background: rgba(122,162,255,.10);
+      border:1px solid rgba(122,162,255,.35);
+      padding:10px 12px;
+      border-radius: 14px;
+      color: var(--text);
+      margin-top: 10px;
+    }
+
+    .footer{
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 18px 22px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    @media (max-width: 980px){
+      .wrap{grid-template-columns: 1fr}
+      .grid2{grid-template-columns:1fr}
+      canvas{height: 220px}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ICA for EEG — Interactive Concept Demo</h1>
+    <div class="sub">
+      This single-page demo is designed for undergrad methods students: it shows <b>general ICA</b> (recovering hidden independent sources from mixed observations)
+      and then a simplified <b>EEG ICA</b> story (scalp channels are mixtures of brain + artifact sources; ICA estimates components you can remove).
+      <span class="small">Tip: the recovered components may differ by <i>order</i> and <i>sign</i> from the originals — that’s normal.</span>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <!-- Controls -->
+    <div class="card">
+      <div class="tabs">
+        <button id="tabGeneral" class="tabbtn active">1) General ICA</button>
+        <button id="tabEEG" class="tabbtn">2) ICA for EEG</button>
+      </div>
+
+      <!-- General section -->
+      <div id="sectionGeneral" class="section active">
+        <h2>Controls</h2>
+        <div class="content">
+
+          <label for="demoMedium">Example medium</label>
+          <select id="demoMedium">
+            <option value="signals">Synthetic signals (time series)</option>
+            <option value="audio" selected>Audio clips (cocktail party)</option>
+          </select>
+          <div class="small" style="margin-top:6px">
+            <b>Goal:</b> build intuition for ICA as “unmixing” latent independent sources from observed mixtures.
+            Try switching to <b>Audio clips</b> to hear the classic “two microphones, two speakers” story.
+          </div>
+
+          <div id="audioOnly" style="display:none; margin-top:10px">
+            <label>Audio sources (open-license clips)</label>
+            <div class="grid2">
+              <div>
+                <label for="audioClip1">Source 1 clip</label>
+                <select id="audioClip1"></select>
+                <div class="row" style="margin-top:6px; gap:8px; align-items:center;">
+                  <input id="audioUpload1" type="file" accept="audio/*" style="max-width: 210px" />
+                  <button id="audioClear1" type="button" class="tiny">Clear</button>
+                </div>
+                <div id="audioUpNote1" class="hint" style="margin-top:4px; color: var(--muted); font-size:12px;">Using selected clip</div>
+              </div>
+              <div>
+                <label for="audioClip2">Source 2 clip</label>
+                <select id="audioClip2"></select>
+                <div class="row" style="margin-top:6px; gap:8px; align-items:center;">
+                  <input id="audioUpload2" type="file" accept="audio/*" style="max-width: 210px" />
+                  <button id="audioClear2" type="button" class="tiny">Clear</button>
+                </div>
+                <div id="audioUpNote2" class="hint" style="margin-top:4px; color: var(--muted); font-size:12px;">Using selected clip</div>
+              </div>
+            </div>
+            <div style="margin-top:6px" class="grid2">
+              <div>
+                <label for="audioClip3">Source 3 clip (optional)</label>
+                <select id="audioClip3"></select>
+                <div class="row" style="margin-top:6px; gap:8px; align-items:center;">
+                  <input id="audioUpload3" type="file" accept="audio/*" style="max-width: 210px" />
+                  <button id="audioClear3" type="button" class="tiny">Clear</button>
+                </div>
+                <div id="audioUpNote3" class="hint" style="margin-top:4px; color: var(--muted); font-size:12px;">Using selected clip</div>
+              </div>
+              <div>
+                <label for="audioLen">Clip duration (loop / trim)</label>
+                <input id="audioLen" type="range" min="2" max="8" step="1" value="4" />
+                <div class="row"><span class="pill"><b id="audioLenVal">4</b> s</span></div>
+              </div>
+            </div>
+
+            <div class="btnbar" style="margin-top:8px">
+              <button id="btnLoadAudio" class="primary">Load selected audio clips</button>
+              <button id="btnStopAudio">Stop audio</button>
+            </div>
+
+            <div id="audioNote" class="pill warn" style="margin-top:8px">
+              Audio mode downloads CC0/Public Domain clips from Wikimedia Commons (internet required).
+            </div>
+
+            <div id="audioCredits" class="small" style="margin-top:8px"></div>
+          </div>
+
+          <label style="margin-top:12px">Listen</label>
+          <div id="generalListen" class="compList"></div>
+
+          <label for="nSources"># sources (hidden causes)</label>
+          <input id="nSources" type="range" min="2" max="5" value="3" />
+          <div class="row"><span class="pill"><b id="nSourcesVal">3</b> sources</span></div>
+
+          <label for="nSensors"># sensors (observations)</label>
+          <input id="nSensors" type="range" min="2" max="5" value="3" />
+          <div class="row"><span class="pill"><b id="nSensorsVal">3</b> sensors</span></div>
+
+          <div id="signalsOnly">
+          <label for="sourceStyle">Source types</label>
+          <select id="sourceStyle">
+            <option value="mixed">Mixed (sin + square + spikes + noise)</option>
+            <option value="oscillations">Oscillations (sin / AM sin)</option>
+            <option value="sparse">Sparse events (spikes / bursts)</option>
+          </select>
+          </div>
+
+          <div class="grid2">
+            <div>
+              <label for="noise">Additive sensor noise</label>
+              <input id="noise" type="range" min="0" max="0.6" step="0.01" value="0" />
+              <div class="row"><span class="pill">noise σ = <b id="noiseVal">0</b></span></div>
+            </div>
+            <div>
+              <label for="mixStrength">Mixing strength</label>
+              <input id="mixStrength" type="range" min="0.2" max="2.0" step="0.05" value="1.0" />
+              <div class="row"><span class="pill">scale = <b id="mixStrengthVal">1.00</b></span></div>
+            </div>
+          </div>
+
+          
+<div class="btnbar">
+            <button id="btnReveal">Reveal / hide true sources</button>
+            <button id="btnRandomizeScene" class="warn">Randomize room layout</button>
+            <button id="btnReset">Reset</button>
+          </div>
+
+          <div class="small" style="margin-top:6px">
+            Mixtures and ICA update automatically as you move speakers/microphones or adjust parameters (no “run” buttons needed).
+          </div>
+
+          <div id="statusGeneral" class="pill">Ready.</div>
+
+          <div class="hint">
+            <div><b>Mental model:</b> there are hidden <i>sources</i> (independent causes) and your sensors record <i>mixtures</i>.</div>
+            <div class="small" style="margin-top:6px">
+              We assume a simple <b>linear mixing</b> story:
+              <span class="mono">X = A·S</span>
+              where <span class="mono">S</span> are the latent sources (rows = sources), <span class="mono">X</span> are the observed channels (rows = sensors),
+              and <span class="mono">A</span> contains the sensor weights (how much each source “shows up” in each channel).
+            </div>
+            <div class="small" style="margin-top:6px">
+              ICA estimates an <b>unmixing</b> matrix <span class="mono">W</span> so the components <span class="mono">Ŝ = W·X</span> are as <b>statistically independent</b> as possible (using <b>higher‑order</b> information, not just correlation).
+              In audio mode, this corresponds to the classic “two speakers → two microphones” cocktail party problem.
+            </div>
+            <div class="small" style="margin-top:6px">
+              After ICA, you can ask two complementary questions:
+              (1) <b>Which sensors contribute most to a component?</b> (row of <span class="mono">W</span>)
+              and (2) <b>Which components contribute most to a sensor?</b> (row of <span class="mono">A</span>).
+              The “Channel contributions” plot visualizes these weightings using RMS contributions.
+            </div>
+          </div>
+
+          <div id="generalMatrices" style="display:none">
+            <label>Mixing matrix <span class="mono">A</span> (sensors × sources)</label>
+            <div id="mixMat"></div>
+            <label style="margin-top:12px">Estimated unmixing <span class="mono">W</span> (components × sensors)</label>
+            <div id="unmixMat"></div>
+          </div>
+
+          <div class="small" style="margin-top:12px">
+            Implementation note: this page runs a small FastICA variant (tanh nonlinearity) in your browser. It’s meant for intuition, not production analysis.
+          </div>
+        </div>
+      </div>
+
+      <!-- EEG section -->
+      <div id="sectionEEG" class="section">
+        <h2>Controls</h2>
+        <div class="content">
+          <label for="eegPreset">Simulated scenario</label>
+          <select id="eegPreset">
+            <option value="blink">Blink artifact + alpha rhythm</option>
+            <option value="muscle">Muscle burst + alpha/theta</option>
+            <option value="mixed">Blink + muscle + line noise</option>
+          </select>
+
+          <div class="grid2">
+            <div>
+              <label for="eegNoise">Sensor noise</label>
+              <input id="eegNoise" type="range" min="0" max="0.6" step="0.01" value="0.10" />
+              <div class="row"><span class="pill">noise σ = <b id="eegNoiseVal">0.10</b></span></div>
+            </div>
+            <div>
+              <label for="eegLen">Epoch length</label>
+              <input id="eegLen" type="range" min="2" max="10" step="1" value="6" />
+              <div class="row"><span class="pill"><b id="eegLenVal">6</b> s</span></div>
+            </div>
+          </div>
+
+          <div class="btnbar">
+            <button id="btnEEGGen" class="primary">Generate EEG</button>
+            <button id="btnEEGICA" class="good">Run ICA</button>
+            <button id="btnRemoveBlink" class="warn">Auto-remove blink-like comp</button>
+            <button id="btnEEGReset">Reset</button>
+          </div>
+
+          <div id="statusEEG" class="pill">Ready.</div>
+
+          <div class="hint">
+            <div><b>EEG intuition:</b> Each channel is a weighted sum of latent sources (brain rhythms + artifacts). ICA estimates components with distinct time courses and scalp weight patterns.</div>
+            <div class="small" style="margin-top:6px">After ICA, you can “zero out” artifact components and reconstruct cleaned channels.</div>
+          </div>
+
+          <label style="margin-top:12px">Components to remove (reconstruct cleaned EEG)</label>
+          <div id="compList" class="compList"></div>
+
+          <div class="small" style="margin-top:12px">
+            Pedagogy note: in real pipelines you also care about referencing, filtering, rank, and stability; component identification is not purely automatic.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Plots -->
+    <div class="card plots">
+      <h2>Interactive Visualization</h2>
+      <div class="plotgrid">
+
+<div class="plotcard" id="sceneCard">
+  <div class="hd">Room model: hidden speakers (sources) → microphones (sensors). Drag icons to change mixing.</div>
+  <canvas id="cScene" width="1100" height="320" style="height:220px"></canvas>
+  <div class="legend" id="legScene"></div>
+</div>
+
+
+        <div class="plotcard">
+          <div class="hd" id="plotTitle1">Hidden sources (S) — (may be hidden)</div>
+          <canvas id="cSources" width="1100" height="260"></canvas>
+          <div class="legend" id="legSources"></div>
+        </div>
+
+        <div class="plotcard">
+          <div class="hd" id="plotTitle2">Observed sensors (X) — mixtures</div>
+          <canvas id="cMixed" width="1100" height="260"></canvas>
+          <div class="legend" id="legMixed"></div>
+        </div>
+
+        <div class="plotcard">
+          <div class="hd" id="plotTitle3">Recovered components (Ŝ) — ICA estimate</div>
+          <canvas id="cRecovered" width="1100" height="260"></canvas>
+          <div class="legend" id="legRecovered"></div>
+        </div>
+
+        <div class="plotcard" id="generalContribCard" style="display:none">
+          <div class="hd" style="justify-content:space-between; align-items:center">
+            <span>Channel contributions → selected reconstruction</span>
+            <div class="row" style="gap:8px; justify-content:flex-end">
+              <span class="small">View:</span>
+              <select id="contribView">
+                <option value="ic">How sensors combine to make IC (Ŝ = W·X)</option>
+                <option value="sensor" selected>How ICs combine to make a sensor (X = A·Ŝ)</option>
+              </select>
+              <span class="small" id="contribSelectLabel">Sensor:</span>
+              <select id="contribSelect"></select>
+            </div>
+          </div>
+
+          <canvas id="cContrib" width="1100" height="240"></canvas>
+          <div class="legend" id="legContrib"></div>
+        </div>
+
+        <div class="plotcard" id="eegTopoCard" style="display:none">
+          <div class="hd">Selected component: time course + scalp weights (topography)</div>
+          <div class="row" style="padding:10px 12px; gap:12px; align-items:stretch; flex-wrap:wrap">
+            <div style="flex: 1 1 520px; min-width: 280px">
+              <canvas id="cCompTime" width="1100" height="220" style="height:170px"></canvas>
+              <div class="legend" id="legCompTime"></div>
+            </div>
+            <div style="flex: 0 0 300px; min-width: 260px">
+              <canvas id="cTopo" width="420" height="420" style="height:250px"></canvas>
+              <div class="legend" id="legTopo"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <b>How to use in class:</b> Start on “General ICA” → drag speakers/microphones to change mixing → listen to sources vs mixtures vs ICA components → discuss assumptions (linear mixing, independence, non‑Gaussianity). Then switch to “ICA for EEG” → generate EEG → run ICA → click components and remove artifacts.</div>
+
+  <!-- No external dependencies: linear algebra + ICA are implemented inline so this file works offline. -->
+
+  <script>
+  /*********************************************************************
+   * ICA for EEG — Interactive Concept Demo
+   * Fixes in this revision:
+   *  - Removed a syntax error that could stop all interactivity.
+   *  - Removed external numeric.js dependency (works offline).
+   *  - Added status indicators + safer async ICA (prevents UI "freezes").
+   *********************************************************************/
+
+  /*********************************************************************
+   * Small utilities
+   *********************************************************************/
+  function LCG(seed){
+    let s = seed >>> 0;
+    return function(){
+      s = (1664525 * s + 1013904223) >>> 0;
+      return (s / 4294967296);
+    };
+  }
+
+  function randn(rng){
+    let u = 0, v = 0;
+    while(u === 0) u = rng();
+    while(v === 0) v = rng();
+    return Math.sqrt(-2.0*Math.log(u)) * Math.cos(2.0*Math.PI*v);
+  }
+
+  function clamp(x, a, b){ return Math.max(a, Math.min(b, x)); }
+
+  function tick(){
+    return new Promise(r => requestAnimationFrame(() => r()));
+  }
+
+  /*********************************************************************
+   * Lightweight linear algebra (arrays-of-arrays) for small matrices.
+   * We only need what ICA uses, and sizes are small (<=16).
+   *********************************************************************/
+  const LA = {
+    zeros: (r,c) => Array.from({length:r}, ()=>Array(c).fill(0)),
+    eye: (n) => {
+      const I = LA.zeros(n,n);
+      for(let i=0;i<n;i++) I[i][i]=1;
+      return I;
+    },
+    clone: (A) => A.map(row => row.slice()),
+    transpose: (A) => {
+      const r = A.length, c = A[0].length;
+      const T = LA.zeros(c,r);
+      for(let i=0;i<r;i++) for(let j=0;j<c;j++) T[j][i]=A[i][j];
+      return T;
+    },
+    dot: (A,B) => {
+      // matrix-matrix multiply
+      const r = A.length, n = A[0].length, c = B[0].length;
+      const out = LA.zeros(r,c);
+      for(let i=0;i<r;i++){
+        for(let k=0;k<n;k++){
+          const aik = A[i][k];
+          for(let j=0;j<c;j++) out[i][j] += aik * B[k][j];
+        }
+      }
+      return out;
+    },
+    dotVec: (A,v) => {
+      const r=A.length, n=A[0].length;
+      const out=new Array(r).fill(0);
+      for(let i=0;i<r;i++){
+        let s=0;
+        for(let k=0;k<n;k++) s += A[i][k]*v[k];
+        out[i]=s;
+      }
+      return out;
+    },
+    scale: (s,A) => A.map(row => row.map(v => s*v)),
+    add: (A,B) => A.map((row,i)=>row.map((v,j)=>v+B[i][j])),
+    sub: (A,B) => A.map((row,i)=>row.map((v,j)=>v-B[i][j])),
+    diag: (d) => {
+      const n=d.length;
+      const D=LA.zeros(n,n);
+      for(let i=0;i<n;i++) D[i][i]=d[i];
+      return D;
+    },
+    diagOf: (A) => {
+      const n = Math.min(A.length, A[0].length);
+      const d = new Array(n);
+      for(let i=0;i<n;i++) d[i]=A[i][i];
+      return d;
+    },
+    absVec: (v) => v.map(x=>Math.abs(x)),
+    // Gauss-Jordan inverse for small matrices
+    inv: (A) => {
+      const n = A.length;
+      const M = LA.clone(A);
+      const I = LA.eye(n);
+
+      for(let col=0; col<n; col++){
+        // pivot
+        let pivot = col;
+        let maxAbs = Math.abs(M[col][col]);
+        for(let r=col+1; r<n; r++){
+          const v = Math.abs(M[r][col]);
+          if(v > maxAbs){ maxAbs=v; pivot=r; }
+        }
+        if(maxAbs < 1e-12) throw new Error('Matrix nearly singular');
+        if(pivot !== col){
+          [M[col], M[pivot]] = [M[pivot], M[col]];
+          [I[col], I[pivot]] = [I[pivot], I[col]];
+        }
+
+        // normalize row
+        const p = M[col][col];
+        for(let j=0;j<n;j++){ M[col][j] /= p; I[col][j] /= p; }
+
+        // eliminate other rows
+        for(let r=0;r<n;r++){
+          if(r===col) continue;
+          const f = M[r][col];
+          if(Math.abs(f) < 1e-12) continue;
+          for(let j=0;j<n;j++){
+            M[r][j] -= f*M[col][j];
+            I[r][j] -= f*I[col][j];
+          }
+        }
+      }
+      return I;
+    },
+
+    // Jacobi eigen-decomposition for symmetric matrices
+    // Returns V (eigenvectors as columns) and d (eigenvalues)
+    eigSym: (A, maxIter=80, tol=1e-10) => {
+      const n = A.length;
+      let D = LA.clone(A);
+      let V = LA.eye(n);
+
+      function maxOffdiag(){
+        let p=0,q=1;
+        let m=0;
+        for(let i=0;i<n;i++){
+          for(let j=i+1;j<n;j++){
+            const v = Math.abs(D[i][j]);
+            if(v > m){ m=v; p=i; q=j; }
+          }
+        }
+        return {m,p,q};
+      }
+
+      for(let it=0; it<maxIter; it++){
+        const {m,p,q} = maxOffdiag();
+        if(m < tol) break;
+
+        const app = D[p][p];
+        const aqq = D[q][q];
+        const apq = D[p][q];
+
+        const phi = 0.5 * Math.atan2(2*apq, (aqq - app));
+        const c = Math.cos(phi);
+        const s = Math.sin(phi);
+
+        // rotate rows/cols p and q in D
+        for(let k=0;k<n;k++){
+          const dpk = D[p][k];
+          const dqk = D[q][k];
+          D[p][k] = c*dpk - s*dqk;
+          D[q][k] = s*dpk + c*dqk;
+        }
+        for(let k=0;k<n;k++){
+          const dkp = D[k][p];
+          const dkq = D[k][q];
+          D[k][p] = c*dkp - s*dkq;
+          D[k][q] = s*dkp + c*dkq;
+        }
+
+        // enforce symmetry numerically
+        D[p][q] = D[q][p] = 0;
+
+        // rotate eigenvectors
+        for(let k=0;k<n;k++){
+          const vkp = V[k][p];
+          const vkq = V[k][q];
+          V[k][p] = c*vkp - s*vkq;
+          V[k][q] = s*vkp + c*vkq;
+        }
+      }
+
+      const d = new Array(n);
+      for(let i=0;i<n;i++) d[i]=D[i][i];
+      return {V, d};
+    }
+  };
+
+  /*********************************************************************
+   * Plotting
+   *********************************************************************/
+  // Extended palette so EEG channel legends (16 ch) don't wrap and accidentally reuse
+  // frontal colors for posterior electrodes (e.g., Fp1 vs P4).
+  const PALETTE = [
+    "#7aa2ff", // blue
+    "#35d07f", // green
+    "#ffcc66", // yellow
+    "#ff6b6b", // red
+    "#c792ea", // purple
+    "#5eead4", // teal
+    "#f472b6", // pink
+    "#f97316", // orange (P4 now distinct from Fp1)
+    "#a3e635", // lime
+    "#38bdf8", // sky
+    "#f59e0b", // amber
+    "#818cf8", // indigo
+    "#fb7185", // rose
+    "#34d399", // emerald
+    "#a78bfa", // violet
+    "#22d3ee", // cyan
+  ];
+
+  function setLegend(el, labels, n){
+    el.innerHTML = "";
+    for(let i=0;i<n;i++){
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      const dot = document.createElement('span');
+      dot.className = 'dot';
+      dot.style.background = PALETTE[i % PALETTE.length];
+      const txt = document.createElement('span');
+      txt.textContent = labels[i] ?? `#${i+1}`;
+      chip.appendChild(dot);
+      chip.appendChild(txt);
+      el.appendChild(chip);
+    }
+  }
+
+  function clearCanvas(c){
+    const ctx = c.getContext('2d');
+    ctx.clearRect(0,0,c.width,c.height);
+  }
+
+  function drawAxes(ctx, w, h, pad){
+    ctx.save();
+    ctx.globalAlpha = 0.9;
+    ctx.strokeStyle = 'rgba(255,255,255,0.14)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(pad, pad, w-2*pad, h-2*pad);
+    for(let k=1;k<=3;k++){
+      const y = pad + (h-2*pad)*(k/4);
+      ctx.beginPath();
+      ctx.moveTo(pad,y);
+      ctx.lineTo(w-pad,y);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function plotSignals(canvas, signals, opts={}){
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    const pad = opts.pad ?? 18;
+    ctx.clearRect(0,0,W,H);
+    drawAxes(ctx, W, H, pad);
+    if(!signals || signals.length===0) return;
+
+    const n = signals.length;
+    const T = signals[0].length;
+
+    let minY = Infinity, maxY = -Infinity;
+    for(let i=0;i<n;i++){
+      for(let t=0;t<T;t++){
+        const v = signals[i][t];
+        if(v<minY) minY=v;
+        if(v>maxY) maxY=v;
+      }
+    }
+    if(minY===maxY){ minY-=1; maxY+=1; }
+
+    const xToPx = (t) => pad + (W-2*pad) * (t/(T-1));
+    const yToPx = (y) => pad + (H-2*pad) * (1 - (y-minY)/(maxY-minY));
+
+    const alpha = (opts.traceAlpha ?? 0.95);
+
+    for(let i=0;i<n;i++){
+      ctx.save();
+      ctx.strokeStyle = PALETTE[i % PALETTE.length];
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      for(let t=0;t<T;t++){
+        const x = xToPx(t);
+        const y = yToPx(signals[i][t]);
+        if(t===0) ctx.moveTo(x,y);
+        else ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    if(opts.caption){
+      ctx.save();
+      ctx.fillStyle = 'rgba(231,236,255,0.85)';
+      ctx.font = '12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
+      ctx.fillText(opts.caption, pad+6, pad+14);
+      ctx.restore();
+    }
+  }
+
+  
+  function plotBarContrib(canvas, values, labels, opts={}){
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    const pad = opts.pad ?? 28;
+    ctx.clearRect(0,0,W,H);
+
+    // background frame
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.14)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(pad, pad, W-2*pad, H-2*pad);
+    ctx.restore();
+
+    if(!values || values.length===0) return;
+
+    const n = values.length;
+    const maxAbs = Math.max(...values.map(v=>Math.abs(v))) || 1;
+
+    const barW = (W-2*pad) / n;
+    const midY = pad + (H-2*pad)/2;
+    const scaleY = (H-2*pad)/2 / maxAbs;
+
+    // zero line
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+    ctx.beginPath();
+    ctx.moveTo(pad, midY);
+    ctx.lineTo(W-pad, midY);
+    ctx.stroke();
+    ctx.restore();
+
+    for(let i=0;i<n;i++){
+      const v = values[i];
+      const x0 = pad + i*barW + barW*0.14;
+      const x1 = pad + (i+1)*barW - barW*0.14;
+      const h = v * scaleY;
+
+      ctx.save();
+      ctx.fillStyle = (v>=0) ? 'rgba(255,204,102,0.85)' : 'rgba(122,162,255,0.85)';
+      ctx.globalAlpha = 0.95;
+      if(h>=0){
+        ctx.fillRect(x0, midY-h, (x1-x0), h);
+      } else {
+        ctx.fillRect(x0, midY, (x1-x0), -h);
+      }
+      ctx.restore();
+
+      // label
+      ctx.save();
+      ctx.fillStyle = 'rgba(231,236,255,0.78)';
+      ctx.font = '11px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(labels[i] ?? `${i+1}`, (x0+x1)/2, H - 10);
+      ctx.restore();
+    }
+
+    // caption
+    if(opts.caption){
+      ctx.save();
+      ctx.fillStyle = 'rgba(231,236,255,0.86)';
+      ctx.font = '12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
+      ctx.fillText(opts.caption, pad+6, pad+16);
+      ctx.restore();
+    }
+  }
+
+
+  /*********************************************************************
+   * ICA helpers
+   *********************************************************************/
+  function mean0(X){
+    const m=X.length, T=X[0].length;
+    const out = new Array(m);
+    for(let i=0;i<m;i++){
+      let mu=0;
+      for(let t=0;t<T;t++) mu+=X[i][t];
+      mu/=T;
+      out[i]=new Array(T);
+      for(let t=0;t<T;t++) out[i][t]=X[i][t]-mu;
+    }
+    return out;
+  }
+
+  function addNoise(X, sigma, rng){
+    if(sigma<=0) return X;
+    const m=X.length, T=X[0].length;
+    const out=new Array(m);
+    for(let i=0;i<m;i++){
+      out[i]=new Array(T);
+      for(let t=0;t<T;t++) out[i][t]=X[i][t]+sigma*randn(rng);
+    }
+    return out;
+  }
+
+  function downsampleChannels(X, factor){
+    if(!X || factor<=1) return X;
+    const m = X.length;
+    const T = X[0].length;
+    const Td = Math.floor((T + factor - 1)/factor);
+    const out = new Array(m);
+    for(let i=0;i<m;i++){
+      const src = X[i];
+      const dst = new Array(Td);
+      let k=0;
+      for(let t=0;t<T;t+=factor) dst[k++] = src[t];
+      out[i] = dst;
+    }
+    return out;
+  }
+
+  async function fastICAAsync(X_in, k=null, maxIter=160, tol=1e-5, seed=1, onProgress=null){
+    const X = mean0(X_in);
+    const m = X.length;
+    const T = X[0].length;
+    k = k ?? m;
+
+    // Covariance (symmetric)
+    const Cov = LA.zeros(m,m);
+    for(let i=0;i<m;i++){
+      for(let j=i;j<m;j++){
+        let s=0;
+        for(let t=0;t<T;t++) s += X[i][t]*X[j][t];
+        s /= T;
+        Cov[i][j]=Cov[j][i]=s;
+      }
+    }
+
+    // eigSym(Cov)
+    const {V:Vfull, d:dfull} = LA.eigSym(Cov, 90, 1e-12);
+
+    // sort eigenvalues desc
+    const idx = dfull.map((v,i)=>[v,i]).sort((a,b)=>b[0]-a[0]).map(p=>p[1]);
+    const d = idx.map(i=>dfull[i]);
+
+    // Ek: m x k (columns)
+    const Ek = LA.zeros(m,k);
+    for(let col=0; col<k; col++){
+      const src = idx[col];
+      for(let r=0;r<m;r++) Ek[r][col] = Vfull[r][src];
+    }
+    const dk = d.slice(0,k);
+
+    // whitening = D^{-1/2} Ek^T
+    const invSqrt = dk.map(v => 1/Math.sqrt(v + 1e-12));
+    const EkT = LA.transpose(Ek); // k x m
+    const whitening = LA.zeros(k,m);
+    for(let i=0;i<k;i++){
+      for(let j=0;j<m;j++) whitening[i][j] = invSqrt[i] * EkT[i][j];
+    }
+
+    // Xw = whitening * X
+    const Xw = LA.dot(whitening, X); // k x T
+
+    // init W random
+    const rng = LCG(seed);
+    let W = LA.zeros(k,k);
+    for(let i=0;i<k;i++) for(let j=0;j<k;j++) W[i][j]=randn(rng);
+
+    function symDecorrelate(Wm){
+      const M = LA.dot(LA.transpose(Wm), Wm); // symmetric
+      const {V,d} = LA.eigSym(M, 80, 1e-12);
+      const invS = d.map(v => 1/Math.sqrt(v + 1e-12));
+      const invSmat = LA.diag(invS);
+      const VinvS = LA.dot(V, invSmat);
+      const invSqrtM = LA.dot(VinvS, LA.transpose(V));
+      return LA.dot(Wm, invSqrtM);
+    }
+
+    W = symDecorrelate(W);
+
+    for(let it=0; it<maxIter; it++){
+      // WX
+      const WX = LA.dot(W, Xw); // k x T
+
+      // g(WX)=tanh, gp=mean(1-tanh^2)
+      const gWX = LA.zeros(k,T);
+      const gp = new Array(k).fill(0);
+      for(let i=0;i<k;i++){
+        let acc=0;
+        for(let t=0;t<T;t++){
+          const u = WX[i][t];
+          const th = Math.tanh(u);
+          gWX[i][t]=th;
+          acc += (1 - th*th);
+        }
+        gp[i]=acc/T;
+      }
+
+      // term1 = (gWX Xw^T)/T
+      const XwT = LA.transpose(Xw); // T x k
+      let term1 = LA.dot(gWX, XwT); // k x k
+      term1 = LA.scale(1/T, term1);
+
+      // term2 = diag(gp) W
+      const term2 = LA.dot(LA.diag(gp), W);
+
+      let Wnew = LA.sub(term1, term2);
+      Wnew = symDecorrelate(Wnew);
+
+      // convergence
+      const M = LA.dot(Wnew, LA.transpose(W));
+      const dM = LA.absVec(LA.diagOf(M));
+      let maxChange = 0;
+      for(const v of dM){
+        const change = Math.abs(1 - v);
+        if(change > maxChange) maxChange = change;
+      }
+      W = Wnew;
+
+      if(onProgress && (it % 10 === 0)) onProgress(it, maxIter);
+      if(it % 10 === 0) await tick();
+
+      if(maxChange < tol) break;
+    }
+
+    // S = W Xw
+    const S = LA.dot(W, Xw);
+
+    // unmix (to sensors) = W * whitening
+    const unmix = LA.dot(W, whitening); // k x m
+
+    // A = unmix^T * inv(unmix unmix^T)
+    const UU = LA.dot(unmix, LA.transpose(unmix)); // k x k
+    const UUinv = LA.inv(UU);
+    const A = LA.dot(LA.transpose(unmix), UUinv); // m x k
+
+    return {S, W: unmix, A, whitening};
+  }
+
+  function matToHTMLTable(M, digits=3){
+    const r=M.length, c=M[0].length;
+    let html = '<table class="matrix">';
+    html += '<tr>';
+    for(let j=0;j<c;j++) html += `<th>${j+1}</th>`;
+    html += '</tr>';
+    for(let i=0;i<r;i++){
+      html += '<tr>';
+      for(let j=0;j<c;j++){
+        const v=M[i][j];
+        html += `<td>${(Math.round(v*Math.pow(10,digits))/Math.pow(10,digits)).toFixed(digits)}</td>`;
+      }
+      html += '</tr>';
+    }
+    html += '</table>';
+    return html;
+  }
+
+  /*********************************************************************
+   * Source generation
+   *********************************************************************/
+  function genSources(n, T, style, rng){
+    const s = new Array(n);
+    const fs = 250;
+    const t = new Array(T);
+    for(let i=0;i<T;i++) t[i]=i/fs;
+
+    function sin(freq, phase=0){
+      const x=new Array(T);
+      for(let i=0;i<T;i++) x[i]=Math.sin(2*Math.PI*freq*t[i]+phase);
+      return x;
+    }
+    function amSin(freq, modFreq){
+      const x=new Array(T);
+      for(let i=0;i<T;i++){
+        const amp = 0.4 + 0.6*(0.5+0.5*Math.sin(2*Math.PI*modFreq*t[i]));
+        x[i]=amp*Math.sin(2*Math.PI*freq*t[i]);
+      }
+      return x;
+    }
+    function square(freq){
+      const x=new Array(T);
+      for(let i=0;i<T;i++) x[i]=Math.sign(Math.sin(2*Math.PI*freq*t[i]));
+      return x;
+    }
+    function sparseSpikes(rate=0.03){
+      const x=new Array(T).fill(0);
+      for(let i=0;i<T;i++){
+        if(rng()<rate){
+          const amp=(rng()<0.5?-1:1)*(0.6+1.2*rng());
+          for(let k=-6;k<=6;k++){
+            const j=i+k;
+            if(j>=0 && j<T) x[j]+= amp*Math.exp(-(k*k)/(2*6));
+          }
+        }
+      }
+      return x;
+    }
+    function coloredNoise(){
+      const x=new Array(T);
+      let prev=0;
+      const a=0.95;
+      for(let i=0;i<T;i++){
+        prev = a*prev + randn(rng);
+        x[i]=prev;
+      }
+      return x;
+    }
+
+    for(let i=0;i<n;i++){
+      if(style==='oscillations'){
+        const f=3+7*rng();
+        const mf=0.1+0.6*rng();
+        s[i]=(rng()<0.6)?sin(f,2*Math.PI*rng()):amSin(f,mf);
+      } else if(style==='sparse'){
+        s[i]=sparseSpikes(0.02+0.04*rng());
+      } else {
+        const pick=i%4;
+        if(pick===0) s[i]=sin(6+6*rng(),2*Math.PI*rng());
+        if(pick===1) s[i]=square(2+5*rng());
+        if(pick===2) s[i]=sparseSpikes(0.02+0.03*rng());
+        if(pick===3) s[i]=coloredNoise();
+      }
+
+      // normalize
+      const mu = s[i].reduce((a,b)=>a+b,0)/T;
+      let ss=0;
+      for(let k=0;k<T;k++) ss+=(s[i][k]-mu)*(s[i][k]-mu);
+      const sd=Math.sqrt(ss/T)+1e-12;
+      for(let k=0;k<T;k++) s[i][k]=(s[i][k]-mu)/sd;
+    }
+
+    return s;
+  }
+
+  function randMix(m, n, strength, rng){
+    const A = LA.zeros(m,n);
+    for(let i=0;i<m;i++){
+      for(let j=0;j<n;j++){
+        A[i][j] = strength*(0.7*randn(rng) + 0.3*(rng()-0.5));
+      }
+    }
+    if(m===n){
+      for(let i=0;i<m;i++) A[i][i]+=0.8*strength;
+    }
+    return A;
+  }
+
+  function mix(A, S){
+    return LA.dot(A, S);
+  }
+
+  /*********************************************************************
+   * EEG simulation + topography drawing
+   *********************************************************************/
+  const EEG = {
+    fs: 250,
+    chLabels: ["Fp1","Fp2","F3","F4","C3","C4","P3","P4","O1","O2","Fz","Cz","Pz","T7","T8","Oz"],
+    chPos: null,
+  };
+
+  function makeChannelPositions(n){
+    const pos=[];
+    const map={
+      Fp1:[-0.35,0.90], Fp2:[0.35,0.90],
+      F3:[-0.55,0.55], F4:[0.55,0.55],
+      Fz:[0,0.62],
+      C3:[-0.60,0.10], C4:[0.60,0.10], Cz:[0,0.12],
+      P3:[-0.50,-0.35], P4:[0.50,-0.35], Pz:[0,-0.40],
+      O1:[-0.30,-0.80], O2:[0.30,-0.80], Oz:[0,-0.86],
+      T7:[-0.95,0.05], T8:[0.95,0.05],
+    };
+    for(let i=0;i<n;i++){
+      const lab=EEG.chLabels[i];
+      const p=map[lab] ?? [Math.cos(2*Math.PI*i/n), Math.sin(2*Math.PI*i/n)];
+      pos.push({label:lab, x:p[0], y:p[1]});
+    }
+    return pos;
+  }
+  EEG.chPos = makeChannelPositions(EEG.chLabels.length);
+
+  function genEEGSources(preset, T, rng){
+    const fs=EEG.fs;
+    const t=new Array(T);
+    for(let i=0;i<T;i++) t[i]=i/fs;
+
+    function osc(freq){
+      const x=new Array(T);
+      const phase=2*Math.PI*rng();
+      for(let i=0;i<T;i++) x[i]=Math.sin(2*Math.PI*freq*t[i]+phase);
+      return x;
+    }
+    function am(freq, mod=0.2){
+      const x=new Array(T);
+      const phase=2*Math.PI*rng();
+      for(let i=0;i<T;i++){
+        const env = 0.4 + 0.6*(0.5+0.5*Math.sin(2*Math.PI*mod*t[i] + 1.2));
+        x[i]=env*Math.sin(2*Math.PI*freq*t[i]+phase);
+      }
+      return x;
+    }
+    function blink(){
+      const x=new Array(T).fill(0);
+      const nB=2+Math.floor(2*rng());
+      for(let b=0;b<nB;b++){
+        const center=Math.floor((0.15+0.7*rng())*T);
+        const amp=2.5+2.0*rng();
+        const w=0.06*fs;
+        for(let k=-Math.floor(3*w); k<=Math.floor(3*w); k++){
+          const i=center+k;
+          if(i>=0 && i<T){
+            const g=Math.exp(-(k*k)/(2*w*w));
+            x[i]+=amp*g;
+          }
+        }
+      }
+      return x;
+    }
+    function muscle(){
+      const x=new Array(T).fill(0);
+      const f=30+50*rng();
+      const carrier=osc(f);
+      const nB=2+Math.floor(3*rng());
+      for(let b=0;b<nB;b++){
+        const start=Math.floor((0.1+0.75*rng())*T);
+        const dur=Math.floor((0.15+0.20*rng())*fs);
+        for(let i=start; i<Math.min(T, start+dur); i++){
+          const env=0.2+0.8*Math.sin(Math.PI*(i-start)/dur);
+          x[i]+=(1.8+1.2*rng())*env*carrier[i];
+        }
+      }
+      return x;
+    }
+    function lineNoise(){
+      const x=new Array(T);
+      const phase=2*Math.PI*rng();
+      for(let i=0;i<T;i++) x[i]=0.1*Math.sin(2*Math.PI*60*t[i]+phase);
+      return x;
+    }
+
+    const sAlpha = am(10,0.18);
+    const sTheta = am(6,0.12);
+    const sBlink = blink();
+    const sMuscle = muscle();
+    const sLine = lineNoise();
+
+    let S=[sAlpha, sTheta, sBlink, sMuscle, sLine];
+    let keep;
+    if(preset==='blink') keep=[0,1,2,4];
+    else if(preset==='muscle') keep=[0,1,3,4];
+    else keep=[0,1,2,3,4];
+    S=keep.map(i=>S[i]);
+
+    for(let i=0;i<S.length;i++){
+      const mu=S[i].reduce((a,b)=>a+b,0)/T;
+      let ss=0;
+      for(let k=0;k<T;k++) ss+=(S[i][k]-mu)*(S[i][k]-mu);
+      const sd=Math.sqrt(ss/T)+1e-12;
+      for(let k=0;k<T;k++) S[i][k]=(S[i][k]-mu)/sd;
+    }
+    return S;
+  }
+
+  function eegMixingMatrix(nCh, nSrc, preset){
+    const A = LA.zeros(nCh,nSrc);
+    const pos = EEG.chPos.slice(0,nCh);
+
+    function gaussianAt(x,y,cx,cy,sx,sy){
+      return Math.exp(-(((x-cx)**2)/(2*sx*sx) + ((y-cy)**2)/(2*sy*sy)));
+    }
+
+    for(let ch=0; ch<nCh; ch++){
+      const {x,y} = pos[ch];
+      const frontal = gaussianAt(x,y, 0, 0.95, 0.55, 0.35);
+      const occip  = gaussianAt(x,y, 0,-0.85, 0.55, 0.35);
+      const mid    = gaussianAt(x,y, 0, 0.10, 0.35, 0.60);
+      const leftT  = gaussianAt(x,y,-0.95,0.05, 0.25, 0.35);
+      const rightT = gaussianAt(x,y, 0.95,0.05, 0.25, 0.35);
+      const global = 0.8;
+
+      A[ch][0] = 1.1*occip + 0.2*mid;
+      if(nSrc>1) A[ch][1] = 0.9*mid + 0.25*frontal;
+
+      if(preset==='blink'){
+        if(nSrc>2) A[ch][2] = 1.5*frontal + 0.1*mid;
+        if(nSrc>3) A[ch][3] = global;
+      } else if(preset==='muscle'){
+        if(nSrc>2) A[ch][2] = 1.4*(leftT+rightT) + 0.10*mid;
+        if(nSrc>3) A[ch][3] = global;
+      } else {
+        if(nSrc>2) A[ch][2] = 1.5*frontal + 0.1*mid;
+        if(nSrc>3) A[ch][3] = 1.4*(leftT+rightT) + 0.10*mid;
+        if(nSrc>4) A[ch][4] = global;
+      }
+    }
+
+    // normalize columns
+    for(let j=0;j<nSrc;j++){
+      let norm=0;
+      for(let i=0;i<nCh;i++) norm += A[i][j]*A[i][j];
+      norm = Math.sqrt(norm)+1e-12;
+      for(let i=0;i<nCh;i++) A[i][j]/=norm;
+    }
+    return A;
+  }
+
+  function reconstructFromICA(A, S, removeMask){
+    const nCh=A.length, nComp=A[0].length, T=S[0].length;
+    // start with full
+    const X = mix(A, S);
+    for(let j=0;j<nComp;j++){
+      if(!removeMask[j]) continue;
+      for(let ch=0; ch<nCh; ch++){
+        const a=A[ch][j];
+        for(let t=0;t<T;t++) X[ch][t] -= a * S[j][t];
+      }
+    }
+    return X;
+  }
+
+  function drawTopography(canvas, weights, chPos){
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0,0,W,H);
+
+    const cx=W/2, cy=H/2;
+    const R=Math.min(W,H)*0.42;
+
+    ctx.save();
+    ctx.strokeStyle='rgba(255,255,255,0.18)';
+    ctx.lineWidth=3;
+    ctx.beginPath();
+    ctx.arc(cx,cy,R,0,2*Math.PI);
+    ctx.stroke();
+
+    // nose
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(cx-0.10*R, cy-R);
+    ctx.lineTo(cx, cy-1.15*R);
+    ctx.lineTo(cx+0.10*R, cy-R);
+    ctx.stroke();
+
+    let maxAbs=0;
+    for(const w of weights) maxAbs=Math.max(maxAbs, Math.abs(w));
+    maxAbs = maxAbs || 1;
+
+    function colorFor(v){
+      const x = clamp(v/maxAbs, -1, 1);
+      const a = Math.abs(x);
+      let r,g,b;
+      if(x>=0){
+        r=255; g=Math.round(255*(1-a)+107*a); b=Math.round(255*(1-a)+107*a);
+      } else {
+        b=255; g=Math.round(255*(1-a)+107*a); r=Math.round(255*(1-a)+107*a);
+      }
+      return `rgb(${r},${g},${b})`;
+    }
+
+    for(let i=0;i<chPos.length;i++){
+      const p=chPos[i];
+      const x=cx+p.x*R;
+      const y=cy - p.y*R;
+      const v=weights[i] ?? 0;
+
+      ctx.fillStyle=colorFor(v);
+      ctx.globalAlpha=0.95;
+      ctx.beginPath();
+      ctx.arc(x,y,12,0,2*Math.PI);
+      ctx.fill();
+      ctx.strokeStyle='rgba(0,0,0,0.35)';
+      ctx.lineWidth=2;
+      ctx.stroke();
+
+      ctx.fillStyle='rgba(231,236,255,0.85)';
+      ctx.globalAlpha=0.9;
+      ctx.font='11px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
+      ctx.textAlign='center';
+      ctx.fillText(p.label, x, y+28);
+    }
+
+    ctx.globalAlpha=1;
+    ctx.fillStyle='rgba(231,236,255,0.85)';
+    ctx.font='12px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
+    ctx.textAlign='left';
+    ctx.fillText(`weights (blue = negative, red = positive), max |w| ≈ ${maxAbs.toFixed(2)}`, 16, H-16);
+
+    ctx.restore();
+  }
+
+  
+  /*********************************************************************
+   * Audio "cocktail party" demo helpers (requires internet for clip fetch)
+   *********************************************************************/
+  const AUDIO_CLIPS = [
+    {
+      id: 'drum',
+      name: 'Drum roll (CC0) — Drum Roll Intro',
+      url: 'https://upload.wikimedia.org/wikipedia/commons/c/c4/Drum_Roll_Intro.ogg',
+      page: 'https://commons.wikimedia.org/wiki/File:Drum_Roll_Intro.ogg',
+      license: 'CC0 1.0 (public domain dedication)',
+      credit: 'Uploaded to Wikimedia Commons; licensed CC0 1.0.'
+    },
+    {
+      id: 'typing',
+      name: 'Typing (CC0) — Contact type',
+      url: 'https://upload.wikimedia.org/wikipedia/commons/e/eb/Contact_type.ogg',
+      page: 'https://commons.wikimedia.org/wiki/File:Contact_type.ogg',
+      license: 'CC0 1.0 (public domain dedication)',
+      credit: 'From pdsounds.org; licensed CC0 1.0 on Wikimedia Commons.'
+    },
+    {
+      id: 'applause',
+      name: 'Applause (Public domain) — Applause ii',
+      url: 'https://upload.wikimedia.org/wikipedia/commons/0/09/Applause_ii.ogg',
+      page: 'https://commons.wikimedia.org/wiki/File:Applause_ii.ogg',
+      license: 'Public domain',
+      credit: 'From pdsounds.org; released into the public domain.'
+    }
+  ];
+
+  function clipById(id){
+    return AUDIO_CLIPS.find(c=>c.id===id) ?? AUDIO_CLIPS[0];
+  }
+
+  // Decode audio from URL -> AudioBuffer, cached in memory.
+  async function fetchDecodeAudio(ctx, url){
+    const res = await fetch(url);
+    if(!res.ok) throw new Error(`Audio fetch failed (${res.status})`);
+    const ab = await res.arrayBuffer();
+    return await ctx.decodeAudioData(ab);
+  }
+
+  function toMonoFloat(buffer){
+    const nCh = buffer.numberOfChannels;
+    const len = buffer.length;
+    if(nCh===1) return buffer.getChannelData(0).slice();
+    const out = new Float32Array(len);
+    for(let ch=0; ch<nCh; ch++){
+      const d = buffer.getChannelData(ch);
+      for(let i=0;i<len;i++) out[i] += d[i] / nCh;
+    }
+    return out;
+  }
+
+  function resampleLoopToLength(src, srcSR, targetLen, targetSR){
+    // simple linear interpolation + loop wrap
+    const ratio = srcSR / targetSR;
+    const out = new Float32Array(targetLen);
+    const n = src.length;
+    for(let i=0;i<targetLen;i++){
+      const pos = (i * ratio) % n;
+      const i0 = Math.floor(pos);
+      const i1 = (i0 + 1) % n;
+      const a = pos - i0;
+      out[i] = (1-a)*src[i0] + a*src[i1];
+    }
+    // mean-center and normalize
+    let mu=0;
+    for(let i=0;i<targetLen;i++) mu += out[i];
+    mu /= targetLen;
+    let ss=0;
+    for(let i=0;i<targetLen;i++){ const v=out[i]-mu; ss += v*v; }
+    const sd = Math.sqrt(ss/targetLen) + 1e-12;
+    for(let i=0;i<targetLen;i++) out[i] = (out[i]-mu)/sd;
+    return out;
+  }
+
+  function floatToAudioBuffer(ctx, arr, sr){
+    const b = ctx.createBuffer(1, arr.length, sr);
+    const d = b.getChannelData(0);
+    d.set(arr);
+    return b;
+  }
+
+  function clampAudio(arr){
+    // prevent clipping for playback
+    let maxAbs=0;
+    for(let i=0;i<arr.length;i++) maxAbs = Math.max(maxAbs, Math.abs(arr[i]));
+    const s = maxAbs>1 ? (1/maxAbs) : 1;
+    if(s===1) return arr;
+    const out = new Float32Array(arr.length);
+    for(let i=0;i<arr.length;i++) out[i] = arr[i]*s;
+    return out;
+  }
+
+  function decimateForPlot(arr, n=1500){
+    const out = new Array(n);
+    const step = arr.length / n;
+    for(let i=0;i<n;i++){
+      out[i] = arr[Math.floor(i*step)];
+    }
+    return out;
+  }
+
+
+  /*********************************************************************
+   * App state
+   *********************************************************************/
+  const state = {
+    mode: 'general',
+    showTrue: false,
+    rngSeed: 7,
+    T: 750,
+    S: null,
+    A: null,
+    X: null,
+    Shat: null,
+    W: null,
+
+    // Used to keep layout stable during interactive updates (avoid scroll jumps)
+    generalEverHadICA: false,
+    generalListenKey: '',
+
+    // General ICA: which reconstruction to visualize
+    contrib: {
+      view: 'sensor',          // 'ic' (Ŝ = W·X) or 'sensor' (X = A·Ŝ)
+      selected: 0,
+    },
+
+    // Audio mode stores full-rate signals separately (plots use decimated versions).
+    audio: {
+      enabled: true,
+      ctx: null,
+      buffers: new Map(),      // url -> AudioBuffer
+      user: [
+        { buf: null, name: null },
+        { buf: null, name: null },
+        { buf: null, name: null },
+      ],                  // per-source uploaded buffers
+      sampleRate: 22050,
+      durationSec: 4,
+      Sfull: null,             // [nS][Tfull] Float32Array
+      Xfull: null,             // [nX][Tfull] Float32Array
+      ShatFull: null,          // [k][Tfull] Float32Array
+      currentNode: null,
+    },
+
+// General ICA scene (speakers + microphones in a 2D room)
+scene: {
+  speakers: [],      // [{x,y}] in normalized [0,1] coords
+  mics: [],          // [{x,y}] in normalized [0,1] coords (color via palette index)
+  dragging: null,    // {kind:'speaker'|'mic', idx}
+  icaTimer: null,
+  lastMixUpdate: 0,
+},
+
+    eeg: {
+      preset: 'blink',
+      nCh: 16,
+      autoRan: false,
+      S: null,
+      A: null,
+      X: null,
+      ica: null,
+      removeMask: null,
+      cleaned: null,
+      selectedComp: 0,
+      T: 1500,
+      autoRan: false,
+    }
+  };
+
+  /*********************************************************************
+   * DOM bindings
+   *********************************************************************/
+  const tabGeneral = document.getElementById('tabGeneral');
+  const tabEEG = document.getElementById('tabEEG');
+  const sectionGeneral = document.getElementById('sectionGeneral');
+  const sectionEEG = document.getElementById('sectionEEG');
+
+  const cSources = document.getElementById('cSources');
+  const cMixed = document.getElementById('cMixed');
+  const cRecovered = document.getElementById('cRecovered');
+  const sceneCard = document.getElementById('sceneCard');
+  const cScene = document.getElementById('cScene');
+  const legScene = document.getElementById('legScene');
+
+
+  const legSources = document.getElementById('legSources');
+  const legMixed = document.getElementById('legMixed');
+  const legRecovered = document.getElementById('legRecovered');
+
+  const plotTitle1 = document.getElementById('plotTitle1');
+  const plotTitle2 = document.getElementById('plotTitle2');
+  const plotTitle3 = document.getElementById('plotTitle3');
+
+  const nSources = document.getElementById('nSources');
+  const nSensors = document.getElementById('nSensors');
+  const nSourcesVal = document.getElementById('nSourcesVal');
+  const nSensorsVal = document.getElementById('nSensorsVal');
+  const noise = document.getElementById('noise');
+  const noiseVal = document.getElementById('noiseVal');
+  const mixStrength = document.getElementById('mixStrength');
+  const mixStrengthVal = document.getElementById('mixStrengthVal');
+  const sourceStyle = document.getElementById('sourceStyle');
+
+  const demoMedium = document.getElementById('demoMedium');
+  const signalsOnly = document.getElementById('signalsOnly');
+  const audioOnly = document.getElementById('audioOnly');
+  const audioClip1 = document.getElementById('audioClip1');
+  const audioClip2 = document.getElementById('audioClip2');
+  const audioClip3 = document.getElementById('audioClip3');
+  const audioUpload1 = document.getElementById('audioUpload1');
+  const audioUpload2 = document.getElementById('audioUpload2');
+  const audioUpload3 = document.getElementById('audioUpload3');
+  const audioClear1 = document.getElementById('audioClear1');
+  const audioClear2 = document.getElementById('audioClear2');
+  const audioClear3 = document.getElementById('audioClear3');
+  const audioUpNote1 = document.getElementById('audioUpNote1');
+  const audioUpNote2 = document.getElementById('audioUpNote2');
+  const audioUpNote3 = document.getElementById('audioUpNote3');
+  const audioLen = document.getElementById('audioLen');
+  const audioLenVal = document.getElementById('audioLenVal');
+  const btnLoadAudio = document.getElementById('btnLoadAudio');
+  const btnStopAudio = document.getElementById('btnStopAudio');
+  const audioNote = document.getElementById('audioNote');
+  const audioCredits = document.getElementById('audioCredits');
+  const generalListen = document.getElementById('generalListen');
+
+  const generalContribCard = document.getElementById('generalContribCard');
+  const cContrib = document.getElementById('cContrib');
+  const legContrib = document.getElementById('legContrib');
+  const contribView = document.getElementById('contribView');
+  const contribSelect = document.getElementById('contribSelect');
+  const contribSelectLabel = document.getElementById('contribSelectLabel');
+  const btnReveal = document.getElementById('btnReveal');
+  const btnRandomizeScene = document.getElementById('btnRandomizeScene');
+  const btnReset = document.getElementById('btnReset');
+
+  const generalMatrices = document.getElementById('generalMatrices');
+  const mixMat = document.getElementById('mixMat');
+  const unmixMat = document.getElementById('unmixMat');
+
+  const statusGeneral = document.getElementById('statusGeneral');
+  const statusEEG = document.getElementById('statusEEG');
+
+  const eegPreset = document.getElementById('eegPreset');
+  const eegNoise = document.getElementById('eegNoise');
+  const eegNoiseVal = document.getElementById('eegNoiseVal');
+  const eegLen = document.getElementById('eegLen');
+  const eegLenVal = document.getElementById('eegLenVal');
+
+  const btnEEGGen = document.getElementById('btnEEGGen');
+  const btnEEGICA = document.getElementById('btnEEGICA');
+  const btnRemoveBlink = document.getElementById('btnRemoveBlink');
+  const btnEEGReset = document.getElementById('btnEEGReset');
+
+  const compList = document.getElementById('compList');
+  const eegTopoCard = document.getElementById('eegTopoCard');
+  const cCompTime = document.getElementById('cCompTime');
+  const legCompTime = document.getElementById('legCompTime');
+  const cTopo = document.getElementById('cTopo');
+  const legTopo = document.getElementById('legTopo');
+
+  function setStatus(el, text, kind=null){
+    if(!el) return;
+    el.classList.remove('good','warn','bad');
+    if(kind) el.classList.add(kind);
+    el.textContent = text;
+  }
+
+  /*********************************************************************
+   * General ICA: UI init (audio clips, listen panel, contribution view)
+   *********************************************************************/
+  function initGeneralUI(){
+    // Populate audio clip selectors
+    const opts = AUDIO_CLIPS.map(c => ({value:c.id, text:c.name}));
+    function fill(sel){
+      sel.innerHTML='';
+      for(const o of opts){
+        const el=document.createElement('option');
+        el.value=o.value; el.textContent=o.text;
+        sel.appendChild(el);
+      }
+    }
+    fill(audioClip1); fill(audioClip2); fill(audioClip3);
+
+    // Defaults: three very different sounds
+    audioClip1.value = 'typing';
+    audioClip2.value = 'drum';
+    audioClip3.value = 'applause';
+
+    function updateCredits(){
+      const ids = [audioClip1.value, audioClip2.value, audioClip3.value];
+      const uniq = Array.from(new Set(ids.map(id=>clipById(id))));
+      audioCredits.innerHTML =
+        uniq.map(c => `• <a href="${c.page}" target="_blank" rel="noopener">${c.name}</a> — ${c.license}`).join('<br>');
+    }
+    function onAudioSelChange(){
+      updateCredits();
+      if(state.audio.enabled){
+        refreshGeneralAll(true);
+      }
+    }
+    audioClip1.addEventListener('change', onAudioSelChange);
+    audioClip2.addEventListener('change', onAudioSelChange);
+    audioClip3.addEventListener('change', onAudioSelChange);
+    updateCredits();
+
+    audioLen.addEventListener('input', ()=>{ audioLenVal.textContent = audioLen.value; });
+    audioLen.addEventListener('change', ()=>{
+      if(state.audio.enabled){
+        state.audio.durationSec = +audioLen.value;
+        refreshGeneralAll(true);
+      }
+    });
+
+    contribView.addEventListener('change', ()=>{
+      state.contrib.view = contribView.value;
+      renderGeneral();
+    });
+    contribSelect.addEventListener('change', ()=>{
+      state.contrib.selected = +contribSelect.value;
+      renderGeneral();
+    });
+
+    demoMedium.addEventListener('change', ()=>{
+      state.audio.enabled = (demoMedium.value === 'audio');
+      signalsOnly.style.display = state.audio.enabled ? 'none' : 'block';
+      audioOnly.style.display = state.audio.enabled ? 'block' : 'none';
+
+      // audio demo is clearer with <=3 sources/sensors
+      if(state.audio.enabled){
+        if(+nSources.value > 3){ nSources.value = 3; nSourcesVal.textContent='3'; }
+        if(+nSensors.value > 3){ nSensors.value = 3; nSensorsVal.textContent='3'; }
+        setStatus(statusGeneral, 'Audio mode: load clips (if needed), then drag icons to change mixing. ICA updates automatically.', 'warn');
+      } else {
+        setStatus(statusGeneral, 'Ready.', null);
+      }
+      actionResetGeneral();
+    });
+
+    btnLoadAudio.addEventListener('click', async ()=>{
+      try{
+        await ensureAudioReady();
+        setStatus(statusGeneral, 'Audio ready. Drag icons; mixtures and ICA update automatically.', 'good');
+        refreshGeneralAll(true);
+      } catch(e){
+        console.error(e);
+        setStatus(statusGeneral, `Audio load error: ${e.message}`, 'bad');
+      }
+    });
+
+    btnStopAudio.addEventListener('click', stopAudio);
+
+    // User audio uploads (per source slot). These override the selected clip.
+    const upInputs = [audioUpload1, audioUpload2, audioUpload3];
+    const clearBtns = [audioClear1, audioClear2, audioClear3];
+    const upNotes  = [audioUpNote1, audioUpNote2, audioUpNote3];
+
+    upInputs.forEach((inp, i)=>{
+      inp.addEventListener('change', async ()=>{
+        const file = inp.files && inp.files[0];
+        if(!file) return;
+        try{
+          await ensureAudioReady(); // ensures audio context exists; may fetch default clips too
+          const ctx = ensureAudioContext();
+          const arr = await file.arrayBuffer();
+          const buf = await ctx.decodeAudioData(arr.slice(0));
+          state.audio.user[i] = { buf, name: file.name };
+          upNotes[i].textContent = `Using uploaded audio: ${file.name}`;
+          upNotes[i].style.color = 'var(--good)';
+          setStatus(statusGeneral, `Loaded uploaded audio for source s${i+1}.`, 'good');
+          refreshGeneralAll(true);
+        } catch(e){
+          console.error(e);
+          setStatus(statusGeneral, `Upload error (s${i+1}): ${e.message}`, 'bad');
+        }
+      });
+    });
+
+    clearBtns.forEach((btn, i)=>{
+      btn.addEventListener('click', ()=>{
+        state.audio.user[i] = { buf: null, name: null };
+        upInputs[i].value = '';
+        upNotes[i].textContent = 'Using selected clip';
+        upNotes[i].style.color = 'var(--muted)';
+        refreshGeneralAll(true);
+      });
+    });
+  }
+
+  function ensureAudioContext(){
+    if(!state.audio.ctx){
+      state.audio.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    return state.audio.ctx;
+  }
+
+  async function ensureAudioReady(){
+    const ctx = ensureAudioContext();
+    state.audio.sampleRate = 22050;
+    state.audio.durationSec = +audioLen.value;
+
+    const selected = [audioClip1.value, audioClip2.value, audioClip3.value].map(clipById);
+    // Only fetch the default clip for slots that don't have a user-uploaded buffer.
+    const urls = selected.map((c, i)=> (state.audio.user[i] && state.audio.user[i].buf) ? null : c.url).filter(Boolean);
+
+    for(const url of urls){
+      if(!state.audio.buffers.has(url)){
+        audioNote.classList.remove('bad'); audioNote.classList.add('warn');
+        audioNote.textContent = 'Loading audio clips… (downloads from Wikimedia Commons)';
+        const buf = await fetchDecodeAudio(ctx, url);
+        state.audio.buffers.set(url, buf);
+      }
+    }
+    audioNote.classList.remove('warn'); audioNote.classList.add('good');
+    audioNote.textContent = 'Audio ready. (Tip: in some browsers, audio playback requires a click.)';
+  }
+
+  function stopAudio(){
+    try{
+      if(state.audio.currentNode){
+        state.audio.currentNode.stop();
+        state.audio.currentNode.disconnect();
+        state.audio.currentNode = null;
+      }
+    } catch(e){}
+  }
+
+  function playFloatArray(arr, sr){
+    const ctx = ensureAudioContext();
+    stopAudio();
+    const buf = floatToAudioBuffer(ctx, clampAudio(arr), sr);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start();
+    state.audio.currentNode = src;
+  }
+
+  function buildGeneralListen(){
+    const nS = state.S ? state.S.length : +nSources.value;
+    const nX = state.X ? state.X.length : +nSensors.value;
+
+    // Rebuilding this list repeatedly while dragging sliders can cause layout reflow
+    // (and visible scroll jumps). Only rebuild when the *structure* changes.
+    const key = [
+      state.audio.enabled ? 'audio' : 'signals',
+      nS, nX,
+      state.audio.enabled ? (!!state.audio.Sfull ? 1 : 0) : 0,
+      state.audio.enabled ? (!!state.audio.Xfull ? 1 : 0) : 0,
+      state.audio.enabled ? (!!state.audio.ShatFull ? 1 : 0) : 0,
+    ].join('|');
+    if(key === state.generalListenKey) return;
+    state.generalListenKey = key;
+
+    generalListen.innerHTML = '';
+
+    function row(label, onClick){
+      const r=document.createElement('div');
+      r.className='compRow';
+      const left=document.createElement('div');
+      left.className='left';
+      const b=document.createElement('button');
+      b.textContent=label;
+      b.addEventListener('click', onClick);
+      const tag=document.createElement('span');
+      tag.className='small';
+      tag.textContent='play';
+      left.appendChild(b); left.appendChild(tag);
+      const right=document.createElement('span');
+      right.className='small';
+      right.textContent='';
+      r.appendChild(left); r.appendChild(right);
+      generalListen.appendChild(r);
+    }
+
+    // Sources
+    if(state.audio.enabled && state.audio.Sfull){
+      for(let i=0;i<Math.min(nS, state.audio.Sfull.length);i++){
+        // Read from state at click time so updates to buffers/mixes don't require rebuilding the list.
+        row(`Source s${i+1}`, ()=>playFloatArray(state.audio.Sfull[i], state.audio.sampleRate));
+      }
+    } else if(state.S){
+      // synthetic: play by sonifying via oscillator is overkill; keep UI empty
+    }
+
+    // Sensors (mixtures)
+    if(state.audio.enabled && state.audio.Xfull){
+      for(let i=0;i<Math.min(nX, state.audio.Xfull.length);i++){
+        row(`Sensor x${i+1} (mixture)`, ()=>playFloatArray(state.audio.Xfull[i], state.audio.sampleRate));
+      }
+    }
+
+    // ICA components
+    if(state.audio.enabled && state.audio.ShatFull){
+      for(let i=0;i<state.audio.ShatFull.length;i++){
+        row(`Recovered IC${i+1}`, ()=>playFloatArray(state.audio.ShatFull[i], state.audio.sampleRate));
+      }
+    }
+
+    if(!generalListen.children.length){
+      const r=document.createElement('div');
+      r.className='compRow';
+      r.innerHTML = `<span class="small">In audio mode, this list becomes playable after you generate/mix/run ICA.</span>`;
+      generalListen.appendChild(r);
+    }
+  }
+
+
+/*********************************************************************
+ * General ICA: Scene (speakers + microphones) and distance-based mixing
+ *********************************************************************/
+function initGeneralScene(){
+  // Initialize positions if needed
+  syncSceneCounts(false);
+
+  // Pointer interactions
+  const canvas = cScene;
+  const ctx = canvas.getContext('2d');
+
+  function getPos(evt){
+    const rect = canvas.getBoundingClientRect();
+    const x = (evt.clientX - rect.left) / rect.width;
+    const y = (evt.clientY - rect.top) / rect.height;
+    return {x: clamp(x, 0, 1), y: clamp(y, 0, 1)};
+  }
+
+  function hitTest(p){
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.width, H = canvas.height;
+    const px = p.x * W, py = p.y * H;
+    const r = 22 * dpr;
+
+    // mics first (on top)
+    for(let i=state.scene.mics.length-1;i>=0;i--){
+      const m = state.scene.mics[i];
+      const mx = m.x * W, my = m.y * H;
+      const dx = px-mx, dy = py-my;
+      if(dx*dx + dy*dy <= r*r) return {kind:'mic', idx:i};
+    }
+    for(let j=state.scene.speakers.length-1;j>=0;j--){
+      const s = state.scene.speakers[j];
+      const sx = s.x * W, sy = s.y * H;
+      const dx = px-sx, dy = py-sy;
+      if(dx*dx + dy*dy <= r*r) return {kind:'speaker', idx:j};
+    }
+    return null;
+  }
+
+  canvas.addEventListener('pointerdown', (e)=>{
+    if(state.mode !== 'general') return;
+    canvas.setPointerCapture(e.pointerId);
+    const p = getPos(e);
+    const hit = hitTest(p);
+    if(hit){
+      state.scene.dragging = hit;
+      e.preventDefault();
+    }
+  });
+
+  canvas.addEventListener('pointermove', (e)=>{
+    if(state.mode !== 'general') return;
+    if(!state.scene.dragging) return;
+    const p = getPos(e);
+    const pad = 0.06;
+    const x = clamp(p.x, pad, 1-pad);
+    const y = clamp(p.y, pad, 1-pad);
+
+    if(state.scene.dragging.kind === 'speaker'){
+      state.scene.speakers[state.scene.dragging.idx].x = x;
+      state.scene.speakers[state.scene.dragging.idx].y = y;
+    } else {
+      state.scene.mics[state.scene.dragging.idx].x = x;
+      state.scene.mics[state.scene.dragging.idx].y = y;
+    }
+    // Update mixtures quickly; ICA is debounced.
+    updateGeneralMixFromScene();
+    scheduleGeneralICA();
+    drawScene();
+  });
+
+  function endDrag(e){
+    if(!state.scene.dragging) return;
+    state.scene.dragging = null;
+    scheduleGeneralICA(true);
+  }
+  canvas.addEventListener('pointerup', endDrag);
+  canvas.addEventListener('pointercancel', endDrag);
+
+  drawScene();
+}
+
+function syncSceneCounts(randomize=false){
+  const nS = +nSources.value;
+  const nX = +nSensors.value;
+
+  // Grow/shrink arrays
+  while(state.scene.speakers.length < nS) state.scene.speakers.push({x:0.25, y:0.25});
+  while(state.scene.speakers.length > nS) state.scene.speakers.pop();
+
+  while(state.scene.mics.length < nX) state.scene.mics.push({x:0.75, y:0.75});
+  while(state.scene.mics.length > nX) state.scene.mics.pop();
+
+  if(randomize){
+    randomizeSceneLayout();
+  } else {
+    // If uninitialized (all default), set a sensible layout
+    const allSameS = state.scene.speakers.every(s => Math.abs(s.x-0.25)<1e-6 && Math.abs(s.y-0.25)<1e-6);
+    const allSameM = state.scene.mics.every(m => Math.abs(m.x-0.75)<1e-6 && Math.abs(m.y-0.75)<1e-6);
+    if(allSameS && allSameM) defaultAlignedSceneLayout();
+  }
+}
+
+
+function defaultAlignedSceneLayout(){
+  // Simple intuitive layout: each mic xi starts near its corresponding source si
+  // (vertical alignment) so the strongest weights match the numbering.
+  const nS = state.scene.speakers.length;
+  const nX = state.scene.mics.length;
+  const n = Math.max(nS, nX);
+  const xFor = (k)=> (n<=1) ? 0.5 : (0.12 + 0.76*(k/(n-1)));
+
+  // Place speakers along the bottom, mics directly above.
+  for(let j=0;j<nS;j++){
+    state.scene.speakers[j].x = xFor(j);
+    state.scene.speakers[j].y = 0.80;
+  }
+  for(let i=0;i<nX;i++){
+    state.scene.mics[i].x = xFor(i);
+    state.scene.mics[i].y = 0.28;
+  }
+}
+
+function randomizeSceneLayout(soft=false){
+  const rng = LCG(state.rngSeed + 999);
+  function jitter(base, amp){
+    return clamp(base + (rng()*2-1)*amp, 0.08, 0.92);
+  }
+  const nS = state.scene.speakers.length;
+  const nX = state.scene.mics.length;
+
+  // Speakers in left half, mics in right half (classic separation)
+  for(let j=0;j<nS;j++){
+    const a = (j+1)/(nS+1);
+    const bx = 0.22 + 0.20*Math.cos(2*Math.PI*a);
+    const by = 0.25 + 0.50*a;
+    state.scene.speakers[j].x = jitter(bx, soft?0.02:0.08);
+    state.scene.speakers[j].y = jitter(by, soft?0.02:0.08);
+  }
+  for(let i=0;i<nX;i++){
+    const a = (i+1)/(nX+1);
+    const bx = 0.78 + 0.18*Math.cos(2*Math.PI*a+1.2);
+    const by = 0.25 + 0.50*a;
+    state.scene.mics[i].x = jitter(bx, soft?0.02:0.08);
+    state.scene.mics[i].y = jitter(by, soft?0.02:0.08);
+  }
+}
+
+function computeSceneMixMatrix(){
+  const nS = state.scene.speakers.length;
+  const nX = state.scene.mics.length;
+  const A = LA.zeros(nX, nS);
+
+  // Distance attenuation (simple physics-inspired heuristic)
+  const p = 1.6;       // falloff exponent
+  const eps = 0.03;    // avoids singularity at d=0
+
+  for(let i=0;i<nX;i++){
+    const m = state.scene.mics[i];
+    let sum = 0;
+    for(let j=0;j<nS;j++){
+      const s = state.scene.speakers[j];
+      const dx = m.x - s.x;
+      const dy = m.y - s.y;
+      const d = Math.sqrt(dx*dx + dy*dy);
+      const w = 1.0 / Math.pow(d + eps, p);
+      A[i][j] = w;
+      sum += w;
+    }
+    // Normalize per microphone so moving far doesn't make everything silent.
+    sum = sum || 1;
+    const scale = +mixStrength.value;
+    for(let j=0;j<nS;j++) A[i][j] = scale * (A[i][j] / sum);
+  }
+  return A;
+}
+
+function drawScene(){
+  if(!cScene) return;
+  const canvas = cScene;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.width, H = canvas.height;
+
+  ctx.clearRect(0,0,W,H);
+
+  // Background grid
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.10)';
+  ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  for(let gx=0; gx<=10; gx++){
+    const x = (gx/10)*W;
+    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
+  }
+  for(let gy=0; gy<=6; gy++){
+    const y = (gy/6)*H;
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+  }
+  ctx.restore();
+
+  // Compute mixing for visualization (lines)
+  const A = computeSceneMixMatrix();
+  const nX = state.scene.mics.length;
+  const nS = state.scene.speakers.length;
+  let maxA = 0;
+  for(let i=0;i<nX;i++) for(let j=0;j<nS;j++) maxA = Math.max(maxA, Math.abs(A[i][j]));
+  maxA = maxA || 1;
+
+  // Lines from speakers to mics (thickness/alpha ~ coupling)
+  ctx.save();
+  for(let i=0;i<nX;i++){
+    const m = state.scene.mics[i];
+    const mx = m.x*W, my=m.y*H;
+    const col = PALETTE[i % PALETTE.length];
+
+    for(let j=0;j<nS;j++){
+      const s = state.scene.speakers[j];
+      const sx = s.x*W, sy=s.y*H;
+      const a = Math.abs(A[i][j]) / maxA;
+      const alpha = 0.08 + 0.70*a;
+      ctx.strokeStyle = `rgba(${hexToRgb(col).join(',')},${alpha})`;
+      ctx.lineWidth = 2 + 10*a;
+      ctx.beginPath();
+      ctx.moveTo(sx,sy);
+      ctx.lineTo(mx,my);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+
+  // Draw speakers
+  ctx.save();
+  for(let j=0;j<nS;j++){
+    const s = state.scene.speakers[j];
+    const x = s.x*W, y=s.y*H;
+    ctx.fillStyle = 'rgba(231,236,255,0.95)';
+    ctx.beginPath(); ctx.arc(x,y,18*dpr,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = 'rgba(11,16,32,0.95)';
+    ctx.font = `${12*dpr}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(`s${j+1}`, x, y);
+    ctx.fillStyle = 'rgba(231,236,255,0.95)';
+    ctx.font = `${18*dpr}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;
+    ctx.fillText('🔊', x, y-26*dpr);
+  }
+  ctx.restore();
+
+  // Draw microphones (color coded)
+  ctx.save();
+  for(let i=0;i<nX;i++){
+    const m = state.scene.mics[i];
+    const x = m.x*W, y=m.y*H;
+    const col = PALETTE[i % PALETTE.length];
+    ctx.fillStyle = col;
+    ctx.beginPath(); ctx.arc(x,y,18*dpr,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(11,16,32,0.95)';
+    ctx.font = `${12*dpr}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(`x${i+1}`, x, y);
+    ctx.fillStyle = 'rgba(231,236,255,0.95)';
+    ctx.font = `${18*dpr}px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial`;
+    ctx.fillText('🎤', x, y-26*dpr);
+  }
+  ctx.restore();
+
+  // Legend
+  if(legScene){
+    legScene.innerHTML =
+      `<span class="small">Drag 🔊 (sources) and 🎤 (sensors). Line strength indicates mixing weight (~ 1/distance<sup>1.6</sup>). Sensor colors match the mixture traces.</span>`;
+  }
+}
+
+function hexToRgb(hex){
+  const h = hex.replace('#','').trim();
+  const v = parseInt(h,16);
+  return [(v>>16)&255, (v>>8)&255, v&255];
+}
+
+// Mix + plot update (fast) — ICA is scheduled separately.
+function updateGeneralMixFromScene(){
+  // Ensure scene counts match current sliders
+  syncSceneCounts(false);
+
+  const nS = +nSources.value;
+  const nX = +nSensors.value;
+
+  // Need sources before we can mix
+  if(!state.S || state.S.length !== nS){
+    return;
+  }
+
+  const rng = LCG(state.rngSeed + 11);
+  const A = computeSceneMixMatrix();
+  state.A = A;
+
+  if(state.audio.enabled){
+    if(!state.audio.Sfull || state.audio.Sfull.length !== nS) return;
+    const Tfull = state.audio.Sfull[0].length;
+    const Xfull = new Array(nX);
+    for(let i=0;i<nX;i++){
+      Xfull[i] = new Float32Array(Tfull);
+      for(let t=0;t<Tfull;t++){
+        let v=0;
+        for(let j=0;j<nS;j++) v += A[i][j] * state.audio.Sfull[j][t];
+        Xfull[i][t] = v;
+      }
+    }
+    const sigma = +noise.value;
+    if(sigma>0){
+      for(let i=0;i<nX;i++){
+        for(let t=0;t<Tfull;t++){
+          Xfull[i][t] += sigma*0.15*randn(rng);
+        }
+      }
+    }
+    state.audio.Xfull = Xfull;
+    state.X = Xfull.map(a => decimateForPlot(a, state.T));
+    state.Shat = null; state.W = null; state.audio.ShatFull=null;
+    renderGeneral();
+    return;
+  }
+
+  // signals
+  let X = mix(A, state.S);
+  X = addNoise(X, +noise.value, rng);
+  state.X = X;
+  state.Shat = null; state.W = null;
+  renderGeneral();
+}
+
+let generalIcaRunning = false;
+function scheduleGeneralICA(immediate=false){
+  if(state.mode !== 'general') return;
+  if(state.scene.icaTimer) clearTimeout(state.scene.icaTimer);
+  const delay = immediate ? 0 : 180;
+  state.scene.icaTimer = setTimeout(()=>{ runGeneralICA(); }, delay);
+}
+
+async function runGeneralICA(){
+  if(generalIcaRunning) return;
+  if(!state.X) return;
+  generalIcaRunning = true;
+  try{
+    const nS = +nSources.value;
+    const nX = +nSensors.value;
+    const k = Math.min(nS, nX);
+
+    if(state.audio.enabled){
+      const Xfull = state.audio.Xfull;
+      if(!Xfull){ generalIcaRunning=false; return; }
+      const Tfull = Xfull[0].length;
+
+      // Downsample for ICA estimation
+      const targetT = 6000;
+      const dsFactor = Math.max(1, Math.floor(Tfull / targetT));
+      const Xica = downsampleChannels(Xfull.map(a=>Array.from(a)), dsFactor);
+
+      setStatus(statusGeneral, `Updating ICA… (downsample ×${dsFactor})`, 'warn');
+
+      const ica = await fastICAAsync(Xica, k, 120, 1e-5, 123, (it,mi)=>{
+        if(it>0) setStatus(statusGeneral, `Updating ICA… iter ${it}/${mi}`, 'warn');
+      });
+
+      // Apply unmixing to full-length centered data
+      const XcFull = mean0(Xfull.map(a=>Array.from(a)));
+      const SfullArr = LA.dot(ica.W, XcFull); // k x Tfull
+      const ShatFull = SfullArr.map(row => {
+        const f = new Float32Array(row.length);
+        for(let i=0;i<row.length;i++) f[i]=row[i];
+        return f;
+      });
+
+      state.W = ica.W;
+      state.Shat = ShatFull.map(a => decimateForPlot(a, state.T));
+      state.audio.ShatFull = ShatFull;
+
+      // Keep the TRUE A (distance-based) for contributions of IC→sensor view
+      // while W is the ICA estimate.
+      setStatus(statusGeneral, 'Updated. Move speakers/mics to change mixtures.', 'good');
+      renderGeneral();
+      return;
+    }
+
+    setStatus(statusGeneral, 'Updating ICA…', 'warn');
+    const ica = await fastICAAsync(state.X, k, 110, 1e-5, 123, (it,mi)=>{
+      if(it>0) setStatus(statusGeneral, `Updating ICA… iter ${it}/${mi}`, 'warn');
+    });
+    state.Shat = ica.S;
+    state.W = ica.W;
+    // Keep true A from scene
+    setStatus(statusGeneral, 'Updated. Move speakers/mics to change mixtures.', 'good');
+    renderGeneral();
+  } catch(e){
+    console.error(e);
+    setStatus(statusGeneral, `ICA error: ${e.message}`, 'bad');
+  } finally {
+    generalIcaRunning = false;
+  }
+}
+
+async function ensureGeneralSources(){
+  const nS = +nSources.value;
+
+  if(state.audio.enabled){
+    await ensureAudioReady();
+    const targetSR = state.audio.sampleRate;
+    const dur = state.audio.durationSec;
+    const targetLen = Math.floor(targetSR * dur);
+
+    const clipIds = [audioClip1.value, audioClip2.value, audioClip3.value].slice(0, nS);
+    const clips = clipIds.map(clipById);
+    const Sfull = [];
+    for(let i=0;i<nS;i++){
+      // Prefer user-uploaded audio for this source slot, if provided.
+      const u = state.audio.user[i];
+      let buf = u && u.buf ? u.buf : null;
+      if(!buf){
+        const c = clips[i % clips.length];
+        buf = state.audio.buffers.get(c.url);
+      }
+      const mono = toMonoFloat(buf);
+      const res = resampleLoopToLength(mono, buf.sampleRate, targetLen, targetSR);
+      Sfull.push(res);
+    }
+    state.audio.Sfull = Sfull;
+    state.audio.Xfull = null;
+    state.audio.ShatFull = null;
+
+    state.T = 1500;
+    state.S = Sfull.map(a => decimateForPlot(a, state.T));
+    state.X = null; state.Shat = null; state.W = null;
+    return;
+  }
+
+  const rng = LCG(state.rngSeed);
+  state.S = genSources(nS, state.T, sourceStyle.value, rng);
+  state.X = null; state.Shat=null; state.W=null;
+}
+
+async function refreshGeneralAll(regenSources=false){
+  try{
+    syncSceneCounts(false);
+    drawScene();
+    if(regenSources || !state.S){
+      setStatus(statusGeneral, 'Preparing sources…', 'warn');
+      await ensureGeneralSources();
+    }
+    updateGeneralMixFromScene();
+    scheduleGeneralICA(true);
+  } catch(e){
+    console.error(e);
+    setStatus(statusGeneral, `Update error: ${e.message}`, 'bad');
+  }
+}
+
+  /*********************************************************************
+   * Mode switching
+   *********************************************************************/
+  function setMode(mode){
+    state.mode = mode;
+    if(mode==='general'){
+      tabGeneral.classList.add('active');
+      tabEEG.classList.remove('active');
+      sectionGeneral.classList.add('active');
+      sectionEEG.classList.remove('active');
+      eegTopoCard.style.display = 'none';
+      sceneCard.style.display = 'block';
+      if(state.Shat){
+        generalContribCard.style.display = 'block';
+        generalContribCard.style.visibility = 'visible';
+      } else if(state.generalEverHadICA){
+        generalContribCard.style.display = 'block';
+        generalContribCard.style.visibility = 'hidden';
+      } else {
+        generalContribCard.style.display = 'none';
+      }
+      renderGeneral();
+    } else {
+      tabEEG.classList.add('active');
+      tabGeneral.classList.remove('active');
+      sectionEEG.classList.add('active');
+      sectionGeneral.classList.remove('active');
+      eegTopoCard.style.display = 'block';
+      sceneCard.style.display = 'none';
+      generalContribCard.style.display = 'none';
+      renderEEG();
+
+      // Auto-run the EEG pipeline the first time this tab is entered (or after reset)
+      // so students see data immediately without clicking 3 separate buttons.
+      maybeAutoRunEEGTab();
+    }
+  }
+
+  tabGeneral.addEventListener('click', ()=>setMode('general'));
+  tabEEG.addEventListener('click', ()=>setMode('eeg'));
+
+  /*********************************************************************
+   * General rendering
+   *********************************************************************/
+  function renderGeneral(){
+    const nS = +nSources.value;
+    const nX = +nSensors.value;
+
+    // Toggle UI sections
+    signalsOnly.style.display = state.audio.enabled ? 'none' : 'block';
+    audioOnly.style.display = state.audio.enabled ? 'block' : 'none';
+
+    plotTitle1.textContent = state.S
+      ? (state.showTrue ? 'Hidden sources (S) — true (for teaching)' : (state.audio.enabled ? 'Hidden sources (S) — audio clips (latent)' : 'Hidden sources (S) — generated (latent)'))
+      : 'Hidden sources (S) — not generated yet';
+    plotTitle2.textContent = 'Observed sensors (X) — mixtures';
+    plotTitle3.textContent = 'Recovered components (Ŝ) — ICA estimate';
+
+    // Sources (plot arrays)
+    if(state.S){
+      plotSignals(cSources, state.S, {
+        caption: state.showTrue
+          ? 'S (true latent sources)'
+          : (state.audio.enabled ? 'S (latent sources — audio clips; dimmed)' : 'S (latent sources — dimmed; not observed)'),
+        // Hidden sources should be dimmed by default in *all* modes; "Reveal" toggles visibility.
+        traceAlpha: state.showTrue ? 0.95 : 0.22,
+      });
+      setLegend(legSources, Array.from({length:nS}, (_,i)=>`source s${i+1}`), nS);
+      if(!state.showTrue){
+        const ctx = cSources.getContext('2d');
+        const pad=18;
+        ctx.save();
+        ctx.fillStyle='rgba(11,16,32,0.55)';
+        ctx.fillRect(pad, pad, cSources.width-2*pad, 40);
+        ctx.fillStyle='rgba(231,236,255,0.88)';
+        ctx.font='13px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
+        ctx.fillText('ICA never observes these directly. It only gets X (mixtures). Click “Reveal / hide true sources”.', pad+10, pad+26);
+        ctx.restore();
+      }
+    } else {
+      const ctx=cSources.getContext('2d');
+      ctx.clearRect(0,0,cSources.width,cSources.height);
+      drawAxes(ctx, cSources.width, cSources.height, 18);
+      ctx.save();
+      ctx.fillStyle='rgba(231,236,255,0.70)';
+      ctx.font='14px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
+      ctx.fillText(state.audio.enabled ? '1) Load audio clips (if not already), then move speakers/mics.' : 'Sources are prepared automatically (or load audio clips in audio mode).', 28, 50);
+      ctx.restore();
+      legSources.innerHTML='';
+    }
+
+    // Mixed
+    if(state.X){
+      plotSignals(cMixed, state.X, {caption: 'X (sensor mixtures)'});
+      setLegend(legMixed, Array.from({length:nX}, (_,i)=>`sensor x${i+1}`), nX);
+    } else {
+      const ctx=cMixed.getContext('2d');
+      ctx.clearRect(0,0,cMixed.width,cMixed.height);
+      drawAxes(ctx, cMixed.width, cMixed.height, 18);
+      ctx.save();
+      ctx.fillStyle='rgba(231,236,255,0.65)';
+      ctx.font='14px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
+      ctx.fillText('Mixtures update automatically from the room layout (X = A·S + noise).', 28, 50);
+      ctx.restore();
+      legMixed.innerHTML='';
+    }
+
+    // Recovered
+    if(state.Shat){
+      state.generalEverHadICA = true;
+      plotSignals(cRecovered, state.Shat, {caption: 'Ŝ (ICA components)'});
+      setLegend(legRecovered, Array.from({length:state.Shat.length}, (_,i)=>`IC${i+1}`), state.Shat.length);
+      generalMatrices.style.display='block';
+      generalMatrices.style.visibility='visible';
+      mixMat.innerHTML = state.A ? matToHTMLTable(state.A) : '';
+      unmixMat.innerHTML = state.W ? matToHTMLTable(state.W) : '';
+
+      // Contribution card
+      generalContribCard.style.display = 'block';
+      generalContribCard.style.visibility = 'visible';
+
+      // Populate selector
+      const k = state.Shat.length;
+      const view = state.contrib.view;
+      contribView.value = view;
+
+      contribSelect.innerHTML = '';
+      const nOptions = (view==='ic') ? k : nX;
+      for(let i=0;i<nOptions;i++){
+        const o=document.createElement('option');
+        o.value = String(i);
+        o.textContent = (view==='ic') ? `IC${i+1}` : `x${i+1}`;
+        contribSelect.appendChild(o);
+      }
+      state.contrib.selected = clamp(state.contrib.selected, 0, nOptions-1);
+      contribSelect.value = String(state.contrib.selected);
+      contribSelectLabel.textContent = (view==='ic') ? 'IC:' : 'Sensor:';
+
+      // Compute contributions
+      const Xc = mean0(state.X);
+      if(view==='ic'){
+        const j = state.contrib.selected;
+        const labels = Array.from({length:nX}, (_,i)=>`x${i+1}`);
+        const vals = new Array(nX).fill(0);
+        for(let i=0;i<nX;i++){
+          // signed RMS contribution of sensor i to IC j
+          let ss=0;
+          const w = state.W[j][i];
+          for(let t=0;t<Xc[0].length;t++){
+            const v = w * Xc[i][t];
+            ss += v*v;
+          }
+          const rms = Math.sqrt(ss / Xc[0].length);
+          vals[i] = Math.sign(w) * rms;
+        }
+        plotBarContrib(cContrib, vals, labels, {caption:`Signed RMS contribution to IC${j+1} (Ŝ = W·X)`});
+
+        // Legend with normalized magnitudes + weights
+        const mags = vals.map(v=>Math.abs(v));
+        const sum = mags.reduce((a,b)=>a+b,0) || 1;
+        legContrib.innerHTML = mags.map((m,i)=>{
+          const pct = (100*m/sum).toFixed(1);
+          const w = state.W[j][i];
+          const sign = w>=0?'+':'−';
+          return `<span class="chip"><span class="dot" style="background:${PALETTE[i%PALETTE.length]}"></span>x${i+1}: ${pct}% <span class="mono">(${sign}${Math.abs(w).toFixed(2)})</span></span>`;
+        }).join('');
+      } else {
+        const ch = state.contrib.selected;
+        const labels = Array.from({length:k}, (_,i)=>`IC${i+1}`);
+        const vals = new Array(k).fill(0);
+        for(let j=0;j<k;j++){
+          // signed RMS contribution of IC j to sensor ch
+          let ss=0;
+          const a = state.A[ch][j];
+          for(let t=0;t<state.Shat[0].length;t++){
+            const v = a * state.Shat[j][t];
+            ss += v*v;
+          }
+          const rms = Math.sqrt(ss / state.Shat[0].length);
+          vals[j] = Math.sign(a) * rms;
+        }
+        plotBarContrib(cContrib, vals, labels, {caption:`Signed RMS contribution to sensor x${ch+1} (X = A·Ŝ)`});
+        const mags = vals.map(v=>Math.abs(v));
+        const sum = mags.reduce((a,b)=>a+b,0) || 1;
+        legContrib.innerHTML = mags.map((m,j)=>{
+          const pct = (100*m/sum).toFixed(1);
+          const a = state.A[ch][j];
+          const sign = a>=0?'+':'−';
+          return `<span class="chip"><span class="dot" style="background:${PALETTE[j%PALETTE.length]}"></span>IC${j+1}: ${pct}% <span class="mono">(${sign}${Math.abs(a).toFixed(2)})</span></span>`;
+        }).join('');
+      }
+
+    } else {
+      const ctx=cRecovered.getContext('2d');
+      ctx.clearRect(0,0,cRecovered.width,cRecovered.height);
+      drawAxes(ctx, cRecovered.width, cRecovered.height, 18);
+      ctx.save();
+      ctx.fillStyle='rgba(231,236,255,0.65)';
+      ctx.font='14px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
+      ctx.fillText('ICA updates automatically to estimate components Ŝ from the current mixtures.', 28, 50);
+      ctx.restore();
+      legRecovered.innerHTML='';
+      // Keep layout stable: once these sections have appeared, hide them via
+      // visibility (not display) so the page doesn't jump while interacting.
+      if(state.generalEverHadICA){
+        generalMatrices.style.display='block';
+        generalMatrices.style.visibility='hidden';
+        generalContribCard.style.display='block';
+        generalContribCard.style.visibility='hidden';
+      } else {
+        generalMatrices.style.display='none';
+        generalContribCard.style.display = 'none';
+      }
+    }
+
+    buildGeneralListen();
+  }
+
+  function actionReveal(){
+    state.showTrue = !state.showTrue;
+    renderGeneral();
+  }
+
+  
+function actionResetGeneral(){
+    stopAudio();
+    state.showTrue = false;
+    state.S=null; state.X=null; state.Shat=null; state.W=null;
+    state.A=null;
+    state.contrib.selected = 0;
+    state.contrib.view = 'sensor';
+
+    if(state.audio.enabled){
+      state.audio.Sfull=null;
+      state.audio.Xfull=null;
+      state.audio.ShatFull=null;
+    }
+
+    // Reset/refresh the spatial layout and recompute automatically
+    syncSceneCounts(false);
+    defaultAlignedSceneLayout();
+drawScene();
+    setStatus(statusGeneral, state.audio.enabled ? 'Reset. (If needed) load audio clips, then drag icons.' : 'Reset. Drag icons to change mixing.', null);
+    refreshGeneralAll(true);
+  }
+
+  btnReveal.addEventListener('click', actionReveal);
+  btnReset.addEventListener('click', actionResetGeneral);
+
+  
+// Auto-update pipeline (no "run" buttons)
+btnRandomizeScene.addEventListener('click', ()=>{
+  syncSceneCounts(true);
+  drawScene();
+  updateGeneralMixFromScene();
+  scheduleGeneralICA(true);
+});
+
+nSources.addEventListener('input', ()=>{
+  if(state.audio.enabled && +nSources.value>3){ nSources.value=3; }
+  nSourcesVal.textContent = nSources.value;
+  syncSceneCounts(false);
+  drawScene();
+  refreshGeneralAll(true);
+});
+
+nSensors.addEventListener('input', ()=>{
+  if(state.audio.enabled && +nSensors.value>3){ nSensors.value=3; }
+  nSensorsVal.textContent = nSensors.value;
+  syncSceneCounts(false);
+  drawScene();
+  updateGeneralMixFromScene();
+  scheduleGeneralICA(true);
+});
+
+noise.addEventListener('input', ()=>{
+  noiseVal.textContent = (+noise.value).toFixed(2);
+  updateGeneralMixFromScene();
+  scheduleGeneralICA();
+});
+
+mixStrength.addEventListener('input', ()=>{
+  mixStrengthVal.textContent = (+mixStrength.value).toFixed(2);
+  updateGeneralMixFromScene();
+  scheduleGeneralICA();
+});
+
+sourceStyle.addEventListener('change', ()=>{
+  if(!state.audio.enabled){
+    refreshGeneralAll(true);
+  }
+});
+
+/*********************************************************************
+   * EEG rendering & actions
+   *********************************************************************/
+  function renderSelectedComponent(){
+    const ica = state.eeg.ica;
+    if(!ica) return;
+    const j = clamp(state.eeg.selectedComp, 0, ica.S.length-1);
+    plotSignals(cCompTime, [ica.S[j]], {caption: `Component IC${j+1} time course`});
+    setLegend(legCompTime, [`IC${j+1}`], 1);
+    const weights = ica.A.map(row => row[j]);
+    drawTopography(cTopo, weights, EEG.chPos.slice(0, state.eeg.nCh));
+    legTopo.innerHTML = '<span class="small">Heuristic: blink → strong frontal weights; alpha → posterior; muscle → lateral/temporal; line noise → near-uniform.</span>';
+  }
+
+  function renderEEG(){
+    plotTitle1.textContent = 'EEG channels — raw (mixtures at sensors)';
+    plotTitle2.textContent = 'EEG channels — cleaned (after removing selected components)';
+    plotTitle3.textContent = 'ICA components (time courses)';
+
+    const nCh = state.eeg.nCh;
+    const Xraw = state.eeg.X;
+    const Xclean = state.eeg.cleaned;
+    const ica = state.eeg.ica;
+
+    if(Xraw){
+      plotSignals(cSources, Xraw.slice(0, Math.min(8,nCh)), {caption:'Raw EEG channels (first 8 shown)'});
+      setLegend(legSources, EEG.chLabels.slice(0, Math.min(8,nCh)), Math.min(8,nCh));
+    } else {
+      clearCanvas(cSources);
+      legSources.innerHTML='';
+    }
+
+    if(Xclean){
+      plotSignals(cMixed, Xclean.slice(0, Math.min(8,nCh)), {caption:'Cleaned EEG channels (first 8 shown)'});
+      setLegend(legMixed, EEG.chLabels.slice(0, Math.min(8,nCh)), Math.min(8,nCh));
+    } else {
+      const ctx=cMixed.getContext('2d');
+      ctx.clearRect(0,0,cMixed.width,cMixed.height);
+      drawAxes(ctx, cMixed.width, cMixed.height, 18);
+      ctx.save();
+      ctx.fillStyle='rgba(231,236,255,0.65)';
+      ctx.font='14px system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif';
+      ctx.fillText('Run ICA, then remove components to reconstruct cleaned EEG here.', 28, 50);
+      ctx.restore();
+      legMixed.innerHTML='';
+    }
+
+    if(ica){
+      plotSignals(cRecovered, ica.S, {caption:'ICA components (time courses)'});
+      setLegend(legRecovered, Array.from({length:ica.S.length}, (_,i)=>`IC${i+1}`), ica.S.length);
+      renderSelectedComponent();
+    } else {
+      clearCanvas(cRecovered);
+      legRecovered.innerHTML='';
+      clearCanvas(cCompTime);
+      clearCanvas(cTopo);
+      legCompTime.innerHTML='';
+      legTopo.innerHTML='';
+    }
+  }
+
+  function buildCompList(){
+    const ica = state.eeg.ica;
+    if(!ica){ compList.innerHTML=''; return; }
+    const k = ica.S.length;
+    compList.innerHTML='';
+    for(let j=0;j<k;j++){
+      const row=document.createElement('div');
+      row.className='compRow';
+      const left=document.createElement('div');
+      left.className='left';
+
+      const cb=document.createElement('input');
+      cb.type='checkbox';
+      cb.checked=!!state.eeg.removeMask[j];
+      cb.addEventListener('change', ()=>{
+        state.eeg.removeMask[j]=cb.checked;
+        state.eeg.cleaned = reconstructFromICA(state.eeg.ica.A, state.eeg.ica.S, state.eeg.removeMask);
+        renderEEG();
+      });
+
+      const b=document.createElement('button');
+      b.textContent=`IC${j+1}`;
+      b.addEventListener('click', ()=>{ state.eeg.selectedComp=j; renderSelectedComponent(); });
+
+      const tag=document.createElement('span');
+      tag.className='small';
+      tag.textContent='click to inspect';
+
+      left.appendChild(cb); left.appendChild(b); left.appendChild(tag);
+
+      const right=document.createElement('span');
+      right.className='small';
+      right.textContent = state.eeg.removeMask[j] ? 'REMOVED' : '';
+
+      row.appendChild(left); row.appendChild(right);
+      compList.appendChild(row);
+    }
+  }
+
+  function actionEEGGen(){
+    try{
+      const preset = eegPreset.value;
+      state.eeg.preset = preset;
+      const sec = +eegLen.value;
+      const T = Math.floor(sec * EEG.fs);
+      state.eeg.T = T;
+
+      const rng = LCG(202 + sec*7);
+      const S = genEEGSources(preset, T, rng);
+      const A = eegMixingMatrix(state.eeg.nCh, S.length, preset);
+      let X = mix(A, S);
+      X = addNoise(X, +eegNoise.value, rng);
+
+      state.eeg.S=S; state.eeg.A=A; state.eeg.X=X;
+      state.eeg.ica=null; state.eeg.removeMask=null; state.eeg.cleaned=null; state.eeg.selectedComp=0;
+
+      compList.innerHTML='';
+      setStatus(statusEEG, `Generated EEG (${state.eeg.nCh} ch) with ${S.length} latent sources. Next: Run ICA.`, 'good');
+      renderEEG();
+    } catch(e){
+      console.error(e);
+      setStatus(statusEEG, `EEG generation error: ${e.message}`, 'bad');
+    }
+  }
+
+  let eegIcaRunning = false;
+  async function actionEEGICA(){
+    if(eegIcaRunning) return;
+    eegIcaRunning = true;
+    btnEEGICA.disabled = true;
+    try{
+      if(!state.eeg.X) actionEEGGen();
+      const Xfull = state.eeg.X;
+      const T = Xfull[0].length;
+
+      // Keep the demo responsive on slower laptops by downsampling for ICA estimation.
+      // After estimating W/A on downsampled data, we apply W back to the full data.
+      const dsFactor = (T > 1600) ? 2 : 1;
+      const Xica = downsampleChannels(Xfull, dsFactor);
+
+      const k = state.eeg.S ? state.eeg.S.length : Math.min(6, Xfull.length);
+      setStatus(statusEEG, dsFactor>1 ? `Running ICA on EEG… (downsample ×${dsFactor})` : 'Running ICA on EEG…', 'warn');
+
+      const ica = await fastICAAsync(Xica, k, 140, 1e-5, 77, (it,mi)=>{
+        if(it>0) setStatus(statusEEG, `Running ICA… iter ${it}/${mi}`, 'warn');
+      });
+
+      // Apply unmixing to full-length, centered data to get full-length components
+      const XcFull = mean0(Xfull);
+      const Sfull = LA.dot(ica.W, XcFull);
+      ica.S = Sfull;
+
+      state.eeg.ica = ica;
+      state.eeg.removeMask = new Array(k).fill(false);
+      state.eeg.cleaned = reconstructFromICA(ica.A, ica.S, state.eeg.removeMask);
+
+      buildCompList();
+      state.eeg.selectedComp = 0;
+      setStatus(statusEEG, 'ICA complete. Click IC buttons, then tick boxes to remove artifacts.', 'good');
+      renderEEG();
+    } catch(e){
+      console.error(e);
+      setStatus(statusEEG, `ICA error: ${e.message}`, 'bad');
+    } finally {
+      btnEEGICA.disabled = false;
+      eegIcaRunning = false;
+    }
+  }
+
+  function actionAutoRemoveBlink(){
+    const ica = state.eeg.ica;
+    if(!ica) return;
+    const labels = EEG.chLabels;
+    const idxFp1 = labels.indexOf('Fp1');
+    const idxFp2 = labels.indexOf('Fp2');
+    const idxO1 = labels.indexOf('O1');
+    const idxO2 = labels.indexOf('O2');
+
+    let bestJ=0, bestScore=-Infinity;
+    for(let j=0;j<ica.S.length;j++){
+      const w = ica.A.map(row => row[j]);
+      const frontal = (Math.abs(w[idxFp1]??0)+Math.abs(w[idxFp2]??0))/2;
+      const occ = (Math.abs(w[idxO1]??0)+Math.abs(w[idxO2]??0))/2;
+      const score = frontal - 0.6*occ;
+      if(score>bestScore){ bestScore=score; bestJ=j; }
+    }
+
+    state.eeg.removeMask[bestJ]=true;
+    state.eeg.cleaned = reconstructFromICA(ica.A, ica.S, state.eeg.removeMask);
+    buildCompList();
+    state.eeg.selectedComp=bestJ;
+    renderEEG();
+    setStatus(statusEEG, `Auto-removed IC${bestJ+1} (blink-like).`, 'good');
+  }
+
+  function actionEEGReset(){
+    state.eeg.S=null; state.eeg.A=null; state.eeg.X=null; state.eeg.ica=null;
+    state.eeg.removeMask=null; state.eeg.cleaned=null; state.eeg.selectedComp=0;
+    state.eeg.autoRan = false;
+    compList.innerHTML='';
+    setStatus(statusEEG, 'Ready.', null);
+    renderEEG();
+  }
+
+  // Auto-generate EEG -> run ICA -> auto-remove blink the first time the user
+  // enters the EEG tab (or after hitting Reset).
+  function maybeAutoRunEEGTab(){
+    if(state.mode !== 'eeg') return;
+    // If we already have a full pipeline result, don't overwrite the user's exploration.
+    if(state.eeg.autoRan && state.eeg.X && state.eeg.ica && state.eeg.cleaned) return;
+    if(eegIcaRunning) return;
+
+    // Mark as ran early to avoid repeated triggers from quick tab toggles.
+    state.eeg.autoRan = true;
+    (async ()=>{
+      try{
+        // Generate from current controls
+        actionEEGGen();
+        await tick();
+        await actionEEGICA();
+        await tick();
+        actionAutoRemoveBlink();
+      } catch(e){
+        console.error(e);
+        state.eeg.autoRan = false;
+      }
+    })();
+  }
+
+  eegPreset.addEventListener('change', ()=>{ state.eeg.preset=eegPreset.value; });
+  eegNoise.addEventListener('input', ()=>{ eegNoiseVal.textContent=(+eegNoise.value).toFixed(2); });
+  eegLen.addEventListener('input', ()=>{ eegLenVal.textContent=(+eegLen.value); });
+
+  btnEEGGen.addEventListener('click', actionEEGGen);
+  btnEEGICA.addEventListener('click', actionEEGICA);
+  btnRemoveBlink.addEventListener('click', actionAutoRemoveBlink);
+  btnEEGReset.addEventListener('click', actionEEGReset);
+
+  /*********************************************************************
+   * Initialize
+   *********************************************************************/
+  
+function init(){
+    nSourcesVal.textContent = nSources.value;
+    nSensorsVal.textContent = nSensors.value;
+    noiseVal.textContent = (+noise.value).toFixed(2);
+    mixStrengthVal.textContent = (+mixStrength.value).toFixed(2);
+    eegNoiseVal.textContent = (+eegNoise.value).toFixed(2);
+    eegLenVal.textContent = (+eegLen.value);
+
+    setStatus(statusGeneral, 'Ready.', null);
+    setStatus(statusEEG, 'Ready.', null);
+
+    initGeneralUI();
+    initGeneralScene();
+
+    // Start with an automatically-updating General ICA demo (audio clips by default)
+    setMode('general');
+    // Ensure the General ICA UI reflects the default medium selection.
+    demoMedium.dispatchEvent(new Event('change'));
+    refreshGeneralAll(true);
+
+    renderEEG();
+  }try{
+    init();
+  } catch(e){
+    console.error(e);
+    setStatus(statusGeneral, `Startup error: ${e.message}`, 'bad');
+    setStatus(statusEEG, `Startup error: ${e.message}`, 'bad');
+  }
+</script>
+</body>
+</html>
